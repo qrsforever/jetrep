@@ -7,6 +7,10 @@
 # @version 1.0
 # @date 2021-11-10 19:42
 
+import sys, signal, traceback # noqa
+import logging
+from logging.handlers import RotatingFileHandler
+import traitlets
 from traitlets.config.application import Application
 from traitlets import Bool, Unicode, List, Dict, Enum
 
@@ -29,7 +33,8 @@ class GstPipelineApp(Application):
     """
     name = Unicode('GstPipeline')
     description = Unicode(__doc__)
-    config_file = Unicode('', help="Load this config file").tag(config=True)
+    config_file = Unicode('', help='Load this config file').tag(config=True)
+    log_file = Unicode('/tmp/gstpipe.log', help='Write log to file ').tag(config=True)
 
     camera = Enum((0,1,'CSI', 'USB'), default_value=1, help='Set the video camera device').tag(config=True)
     shmsink = Bool(default_value=True, help='Use shared memory sink source').tag(config=True)
@@ -54,6 +59,21 @@ class GstPipelineApp(Application):
         )
     )
 
+    @traitlets.default('log')
+    def _log_default(self):
+        log = logging.getLogger(self.__class__.__name__)
+        # log.setLevel(self.log_level)
+        log.setLevel(logging.DEBUG)
+        formatter = self._log_formatter_cls(fmt=self.log_format, datefmt=self.log_datefmt)
+        console = logging.StreamHandler()
+        console.setFormatter(formatter)
+        filelog = RotatingFileHandler(
+                self.log_file, mode='a', maxBytes=5*1024*1024, backupCount=2, encoding=None, delay=0)
+        filelog.setFormatter(formatter)
+        log.addHandler(console)
+        log.addHandler(filelog)
+        return log
+
     def initialize(self, argv=None):
         self.parse_command_line(argv)
         if self.config_file:
@@ -76,14 +96,12 @@ class GstPipelineApp(Application):
             if self.filesink:
                 _ = MultiFilesSink(h264cvt, parent=self) # noqa
 
-        self.log.info(f'Gst string: {cam.gst_str()}')
-        self.gst_pipe = Gst.parse_launch(cam.gst_str())
-        bus = self.gst_pipe.get_bus()
-        bus.add_signal_watch()
-        bus.connect('message', self.on_message)
+        self.gst_str = cam.gst_str()
+        self.log.info(f'Gst string: {self.gst_str}')
 
     def start(self):
         self.log.info('Starting...')
+
         self.start_launch()
 
     def stop(self):
@@ -92,36 +110,50 @@ class GstPipelineApp(Application):
 
     def start_launch(self):
         self.log.info('Start gst..')
-        # self.loop = GObject.MainLoop()
+        self.gst_pipe = Gst.parse_launch(self.gst_str)
+        bus = self.gst_pipe.get_bus()
+        bus.add_signal_watch()
+        bus.connect('message', self.on_message, self.mainloop)
         self.gst_pipe.set_state(Gst.State.READY)
         self.gst_pipe.set_state(Gst.State.PAUSED)
         self.gst_pipe.set_state(Gst.State.PLAYING)
-        # self.loop.run()
-        # self.loop.quit()
 
     def stop_launch(self):
         self.gst_pipe.set_state(Gst.State.NULL)
 
-    def on_message(self, bus, msg):
-        self.log.info(f'Message type: msg.type')
+    def on_message(self, bus: Gst.Bus, msg: Gst.Message, loop: GObject.MainLoop):
+        self.log.info(f'Message type: {msg.type}')
         t = msg.type
         if t == Gst.MessageType.EOS:
-            pass
-        elif t == Gst.MESSAGE_ERROR:
-            err, debug = msg.parse_error()
-            self.log.error(f'{err}: {debug}')
+            self.log.info('Stream EOS')
+            loop.quit()
+        elif t == Gst.MessageType.ERROR:
+            self.log.error('{}: {}'.format(msg.parse_error()))
+            loop.quit()
         elif t == Gst.MessageType.WARNING:
-            err, debug = msg.parse_warning()
-            self.log.warning(f'{err}: {debug}')
+            self.log.warning('{}: {}'.format(msg.parse_warning()))
         return True
 
     def run(self, argv=None):
         try:
+            self.mainloop = GObject.MainLoop()
             self.initialize(argv)
             self.setup()
             self.start()
-        except Exception as err:
-            self.log.error('%tb' % err)
+            self.mainloop.run()
+        except Exception:
+            self.mainloop.quit()
+            self.log.error(traceback.format_exc(limit=6))
+
+
+# def signal_handler(sig, frame):
+#     app.log.info('Handle signal: [%d]' % sig)
+#     app.gst_pipe.set_state(Gst.State.NULL)
+#     sys.exit(0)
+#
+#
+# signal.signal(signal.SIGINT, signal_handler)
+# signal.signal(signal.SIGTERM, signal_handler)
 
 
 if __name__ == "__main__":

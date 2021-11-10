@@ -1,0 +1,17 @@
+[Unit]
+Description=Gst pipeline start launch
+After=multi-user.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/nano/omega/jetson/jetrep
+Environment="PYTHONPATH=/home/nano/omega/jetson/jetrep"
+# EnvironmentFile=
+Restart=always
+RestartSec=5
+ExecStart=/usr/bin/python3 jetrep/stream -c etc/jetgst.json
+StandardOutput=syslog
+StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target

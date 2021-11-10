@@ -15,7 +15,7 @@ from .gsink import GDataSink
 
 class ShareMemorySink(GDataSink):
     name = Unicode(default_value='shmsink')
-    path = Unicode(default_value='/tmp/gst_socket.shm', help='The path to the control socket(shared memory).').tag(config=True)
+    path = Unicode(default_value='', allow_none=False, help='The path to the control socket(shared memory).').tag(config=True)
     size = Int(default_value=10000000, min=0, max=4294967295, help='Size of the shared memory area').tag(config=True)
 
     @traitlets.validate('path')

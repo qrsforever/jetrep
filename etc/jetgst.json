@@ -1,0 +1,36 @@
+{
+    "GstPipelineApp": {
+        "log_level": 10,
+        "log_datefmt": "%Y-%m-%d %H:%M:%S",
+        "log_format": "%(asctime)s %(funcName)s:%(lineno)d %(name)s %(levelname)s %(message)s",
+        "camera": "USB"
+    },
+    "USBCamera": {
+        "number_buffers": -1,
+        "width": 640,
+        "height": 480,
+        "framerate": 30,
+        "flip_method": 0
+    },
+    "CSICamera": {
+        "width": 640,
+        "height": 480,
+        "framerate": 30,
+        "flip_method": 0
+    },
+    "GH264CodecCvt": {
+        "bitrate": 5000000
+    },
+    "ShareMemorySink": {
+        "path": "/tmp/gst_repnet.shm",
+        "size": 10000000
+    },
+    "MultiFilesSink": {
+        "location": "/home/nano/omega/gst"
+    },
+    "SRSRtmpSink": {
+        "server": "0.0.0.0",
+        "port": 1935,
+        "stream": "repnet_raw"
+    }
+}
