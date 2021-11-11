@@ -6,6 +6,7 @@ TOP_DIR=$(dirname $CUR_DIR)
 DST_DIR=/etc/systemd/system/
 
 SERVICE=jetgst.service
+RESTAPI=http://0.0.0.0:8282/apis/systemd/v1/status
 
 if [[ 0 != $(id -u) ]]
 then
@@ -28,8 +29,10 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     EnvironmentFile=$TOP_DIR/etc/jetgst.env
     Restart=always
     RestartSec=5
-    ExecStartPre=/bin/systemctl restart nvargus-daemon
+    ExecStartPre=-/bin/systemctl restart nvargus-daemon
     ExecStart=/usr/bin/python3 jetrep/stream -c etc/jetgst.json
+    ExecStartPost=/usr/bin/curl -d '{"name": "jetgst", "status": "started"}' $RESTAPI
+    ExecStopPost=/usr/bin/curl -d '{"name": "jetgst", "status": "stopped"}' $RESTAPI
     TimeoutStartSec=10
     TimeoutStopSec=5
     StandardOutput=syslog

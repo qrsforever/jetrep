@@ -1,12 +1,11 @@
 #!/bin/bash
 
+USER=$(whoami)
 CUR_DIR=$(cd $(dirname ${BASH_SOURCE[0]}); pwd)
 TOP_DIR=$(dirname $CUR_DIR)
 DST_DIR=/etc/systemd/system/
 
-SERVICE=jupyter.service
-HOST_IP=172.16.0.35
-WORKSPACE=/home/nano/omega
+SERVICE=repapi.service
 
 if [[ 0 != $(id -u) ]]
 then
@@ -14,24 +13,22 @@ then
     exit 0
 fi
 
-jupyter notebook --no-browser --notebook-dir=$WORKSPACE --allow-root --ip=0.0.0.0 --port=8118
-
 cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
 [Unit]
-    Description=Notebook Service
+    Description=JetRep Rest API Service
     Documentation=http://jetrep.hzcsai.com
-    After=network.target multi-user.target
+    After=multi-user.target
 
 [Service]
     Type=simple
     User=$USER
     Group=$USER
     UMask=0000
-    WorkingDirectory=$WORKSPACE
+    WorkingDirectory=$TOP_DIR
+    Environment="PYTHONPATH=$TOP_DIR"
     Restart=always
     RestartSec=5
-    ExecStartPre=/sbin/mount.nfs $HOST_IP:/blog/public $WORKSPACE
-    ExecStart=/usr/bin/jupyter notebook --no-browser --notebook-dir=$WORKSPACE --allow-root --ip=0.0.0.0 --port=8118
+    ExecStart=/usr/bin/python3 jetrep/api/server.py --port 8282 --rpc_port 8181
     TimeoutStartSec=10
     TimeoutStopSec=5
     StandardOutput=syslog

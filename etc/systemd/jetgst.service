@@ -1,7 +1,7 @@
 [Unit]
     Description=Gst pipeline start launch
     Documentation=http://jetrep.hzcsai.com
-    After=multi-user.target 
+    After=srs.service multi-user.target
 
 [Service]
     Type=simple
@@ -12,8 +12,10 @@
     EnvironmentFile=/home/nano/omega/jetson/jetrep/etc/jetgst.env
     Restart=always
     RestartSec=5
-    ExecStartPre=/bin/systemctl restart nvargus-daemon
+    ExecStartPre=-/bin/systemctl restart nvargus-daemon
     ExecStart=/usr/bin/python3 jetrep/stream -c etc/jetgst.json
+    ExecStartPost=/usr/bin/curl -d '{"server": "jetgst", "status": "started"}' http://0.0.0.0:8282/apis/systemd/v1/status
+    ExecStopPost=/usr/bin/curl -d '{"server": "jetgst", "status": "stopped"}' http://0.0.0.0:8282/apis/systemd/v1/status
     TimeoutStartSec=10
     TimeoutStopSec=5
     StandardOutput=syslog

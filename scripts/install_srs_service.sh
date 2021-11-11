@@ -7,6 +7,7 @@ DST_DIR=/etc/systemd/system/
 
 SERVICE=srs.service
 SRS_DIR=/home/nano/srs
+RESTAPI=http://0.0.0.0:8282/apis/systemd/v1/status
 
 if [[ 0 != $(id -u) ]]
 then
@@ -16,7 +17,7 @@ fi
 
 cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
 [Unit]
-    Description=Gst pipeline start launch
+    Description=JetRep SRS Webrtc Service
     Documentation=http://jetrep.hzcsai.com
     After=multi-user.target
 
@@ -29,6 +30,8 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     Restart=always
     RestartSec=5
     ExecStart=$SRS_DIR/objs/srs -c $TOP_DIR/etc/srs.conf
+    ExecStartPost=/usr/bin/curl -d '{"name": "srs", "status": "started"}' $RESTAPI
+    ExecStopPost=/usr/bin/curl -d '{"name": "srs", "status": "stopped"}' $RESTAPI
     TimeoutStartSec=10
     TimeoutStopSec=5
     StandardOutput=syslog

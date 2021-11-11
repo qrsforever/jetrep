@@ -1,0 +1,22 @@
+[Unit]
+    Description=JetRep Rest API Service
+    Documentation=http://jetrep.hzcsai.com
+    After=multi-user.target
+
+[Service]
+    Type=simple
+    User=root
+    Group=root
+    UMask=0000
+    WorkingDirectory=/home/nano/omega/jetson/jetrep
+    Environment="PYTHONPATH=/home/nano/omega/jetson/jetrep"
+    Restart=always
+    RestartSec=5
+    ExecStart=/usr/bin/python3 jetrep/api/server.py --port 8282 --rpc_port 8181
+    TimeoutStartSec=10
+    TimeoutStopSec=5
+    StandardOutput=syslog
+    StandardError=syslog
+
+[Install]
+    WantedBy=multi-user.target
