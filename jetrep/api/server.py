@@ -59,10 +59,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     try:
-        jetrep = zerorpc.Client(
+        app.jetrep = zerorpc.Client(
             timeout=3,
             passive_heartbeat=True)
-        ret = jetrep.connect('tcp://{}:{}'.format(args.rpc_host, args.rpc_port))  # noqa
+        ret = app.jetrep.connect('tcp://{}:{}'.format(args.rpc_host, args.rpc_port))  # noqa
         if len(ret) == 0 or ret[0] is None:
             raise RuntimeError('Connect jetrep zerorpc error')
         server = pywsgi.WSGIServer((args.host, args.port), app)

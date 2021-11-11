@@ -62,13 +62,12 @@ class GstPipelineApp(Application):
     @traitlets.default('log')
     def _log_default(self):
         log = logging.getLogger(self.__class__.__name__)
-        # log.setLevel(self.log_level)
-        log.setLevel(logging.DEBUG)
+        log.setLevel(self.log_level)
         formatter = self._log_formatter_cls(fmt=self.log_format, datefmt=self.log_datefmt)
         console = logging.StreamHandler()
         console.setFormatter(formatter)
         filelog = RotatingFileHandler(
-                self.log_file, mode='a', maxBytes=5*1024*1024, backupCount=2, encoding=None, delay=0)
+            self.log_file, mode='a', maxBytes=5*1024*1024, backupCount=2, encoding=None, delay=0)
         filelog.setFormatter(formatter)
         log.addHandler(console)
         log.addHandler(filelog)
