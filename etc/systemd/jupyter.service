@@ -1,19 +1,18 @@
 [Unit]
     Description=Gst pipeline start launch
     Documentation=http://jetrep.hzcsai.com
-    After=multi-user.target 
+    After=network.target multi-user.target
 
 [Service]
     Type=simple
     User=root
     Group=root
     UMask=0000
-    WorkingDirectory=/home/nano/omega/jetson/jetrep
-    EnvironmentFile=/home/nano/omega/jetson/jetrep/etc/jetgst.env
+    WorkingDirectory=/home/nano/omega
     Restart=always
     RestartSec=5
-    ExecStartPre=/bin/systemctl restart nvargus-daemon
-    ExecStart=/usr/bin/python3 jetrep/stream -c etc/jetgst.json
+    ExecStartPre=/sbin/mount.nfs 172.16.0.35:/blog/public /home/nano/omega
+    ExecStart=/usr/bin/jupyter notebook --no-browser --notebook-dir=/home/nano/omega --allow-root --ip=0.0.0.0 --port=8118
     TimeoutStartSec=10
     TimeoutStopSec=5
     StandardOutput=syslog
