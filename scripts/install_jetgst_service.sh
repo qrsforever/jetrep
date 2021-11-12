@@ -29,12 +29,12 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     EnvironmentFile=$TOP_DIR/etc/jetgst.env
     Restart=always
     RestartSec=10
-    ExecStartPre=-/bin/systemctl restart nvargus-daemon
-    ExecStartPre=/usr/bin/curl -d '{"name": "jetgst", "status": "starting"}' $RESTAPI
+    # ExecStartPre=-/bin/systemctl restart nvargus-daemon
+    ExecStartPre=-/usr/bin/curl -d '{"name": "jetgst", "status": "starting"}' $RESTAPI
     ExecStart=/usr/bin/python3 jetrep/stream -c etc/jetgst.json
     ExecStartPost=/bin/sleep 2
-    ExecStartPost=/usr/bin/curl -d '{"name": "jetgst", "status": "started"}' $RESTAPI
-    ExecStopPost=/usr/bin/curl -d '{"name": "jetgst", "status": "stopped"}' $RESTAPI
+    ExecStartPost=-/usr/bin/curl -d '{"name": "jetgst", "status": "started"}' $RESTAPI
+    ExecStopPost=-/usr/bin/curl -d '{"name": "jetgst", "status": "stopped"}' $RESTAPI
     TimeoutStartSec=10
     TimeoutStopSec=5
     StandardOutput=syslog

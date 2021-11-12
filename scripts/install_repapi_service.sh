@@ -30,7 +30,6 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     Restart=always
     RestartSec=5
     ExecStart=/usr/bin/python3 jetrep/api/server.py --host 127.0.0.1 --port 8282 --rpc_host 127.0.0.1 --rpc_port 8181
-    ExecStop=-/usr/bin/curl -d '{"name": "repapi", "status": "stopped"}' $RESTAPI
     TimeoutStartSec=10
     TimeoutStopSec=5
     StandardOutput=syslog

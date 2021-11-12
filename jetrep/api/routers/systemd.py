@@ -42,9 +42,9 @@ def _systemd_status():
     app.logger.info(reqjson)
     sname = reqjson['name']
     state = reqjson['status']
-    app.jetrep.send_message(MessageType.LOG, LogType.INFO, -1, reqjson)
+    app.send_message(MessageType.LOG, LogType.INFO, -1, reqjson)
     if sname not in SER_STR2INT or state not in STA_STR2INT:
         app.logger.warning(f'Not support service name [{sname}] and state [{state}]')
         return ERR
-    app.jetrep.send_message(MessageType.STATE, SER_STR2INT[sname], STA_STR2INT[state], sname)
+    app.send_message(MessageType.STATE, SER_STR2INT[sname], STA_STR2INT[state], sname)
     return OK

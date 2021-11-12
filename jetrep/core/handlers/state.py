@@ -20,29 +20,30 @@ class StateHandler(MessageHandler):
         super(StateHandler, self).__init__(app, keys=[MessageType.STATE])
 
     def on_service_srs(self, state, obj):
-        self.log.info(f'Service {obj} state:[{state}]')
         if state == StateType.STARTING:
-            self.log.info(f'Service {obj} is starting...')
             return True
         if state == StateType.STARTED:
             return self.app.start_gst_launch()
         if state == StateType.STOPPED:
-            return self.app.stop_gst_launch()
+            return self.app.stop_api_handler()
         return False
 
     def on_service_gst(self, state, obj):
-        return False
-
-    def on_service_api(self, state, obj):
-        self.log.info(f'Service {obj} state:[{state}]')
-        if state == StateType.STARTING:
-            return self.app.start_srs_webrtc()
-        if state == StateType.STOPPING:
+        if state == StateType.STARTED:
+            return True
+        if state == StateType.STOPPED:
             return self.app.stop_srs_webrtc()
         return False
 
+    def on_service_api(self, state, obj):
+        if state == StateType.STARTING:
+            return self.app.start_srs_webrtc()
+        if state == StateType.STOPPING:
+            return True
+        return False
+
     def handle_message(self, what, arg1, arg2, obj):
-        self.log.info(f'{what} {arg1} {arg2}')
+        self.log.info(f'{what} {arg1} {arg2} {obj}')
         if what != MessageType.STATE:
             return False
         if arg1 == ServiceType.SRS:

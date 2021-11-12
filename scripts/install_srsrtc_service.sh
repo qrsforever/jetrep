@@ -29,11 +29,11 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     WorkingDirectory=$SRS_DIR
     Restart=always
     RestartSec=10
-    ExecStartPre=/usr/bin/curl -d '{"name": "srsrtc", "status": "starting"}' $RESTAPI
+    ExecStartPre=-/usr/bin/curl -d '{"name": "srsrtc", "status": "starting"}' $RESTAPI
     ExecStart=$SRS_DIR/objs/srs -c $TOP_DIR/etc/srsrtc.conf
     ExecStartPost=/bin/sleep 2
-    ExecStartPost=/usr/bin/curl -d '{"name": "srsrtc", "status": "started"}' $RESTAPI
-    ExecStopPost=/usr/bin/curl -d '{"name": "srsrtc", "status": "stopped"}' $RESTAPI
+    ExecStartPost=-/usr/bin/curl -d '{"name": "srsrtc", "status": "started"}' $RESTAPI
+    ExecStopPost=-/usr/bin/curl -d '{"name": "srsrtc", "status": "stopped"}' $RESTAPI
     TimeoutStartSec=10
     TimeoutStopSec=5
     StandardOutput=syslog

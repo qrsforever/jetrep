@@ -20,6 +20,13 @@ class MessageType(IntEnum):
 
 
 @unique
+class CommandType(IntEnum):
+    NOP = 1
+    APP_START = 2
+    APP_STOP = 3
+
+
+@unique
 class LogType(IntEnum):
     DEBUG = 1
     INFO = 2
@@ -32,6 +39,8 @@ class ServiceType(IntEnum):
     SRS = 1
     GST = 2
     API = 3
+
+    RT_INFER_ENGINE = 4
 
 
 @unique

@@ -2,7 +2,7 @@
     "JetRepApp": {
         "log_level": 10,
         "log_datefmt": "%Y-%m-%d %H:%M:%S",
-        "log_format": "%(asctime)s %(filename)s %(funcName)s:%(lineno)d %(name)s %(levelname)s %(message)s",
+        "log_format": "%(thread)d %(asctime)s %(filename)s %(funcName)s:%(lineno)d %(name)s %(levelname)s %(message)s",
         "rpc_host": "127.0.0.1"
     }
 }

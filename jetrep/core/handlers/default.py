@@ -9,18 +9,23 @@
 
 
 from jetrep.core.message import MessageHandler
-from jetrep.core.message import MessageType
+from jetrep.core.message import (
+    MessageType,
+    CommandType,
+)
 
 
 class DefaultHandler(MessageHandler):
     def __init__(self, app):
         super(DefaultHandler, self).__init__(app, keys=[MessageType.CTRL, MessageType.QUIT])
-        self.app = app
 
     def handle_message(self, what, arg1, arg2, obj):
+        self.log.info(f'{what} {arg1} {arg2} {obj}')
         if what == MessageType.CTRL:
-            return True
-
+            if arg1 == CommandType.APP_START:
+                return self.app.start_api_handler()
+            if arg1 == CommandType.APP_STOP:
+                return self.app.stop_gst_launch()
         return False
 
     @staticmethod

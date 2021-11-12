@@ -9,19 +9,24 @@
 
 import sys, os, signal, traceback # noqa
 import logging, time
-import zerorpc
-from logging.handlers import RotatingFileHandler
 import traitlets
+from logging.handlers import RotatingFileHandler
 from traitlets.config.application import Application
 from traitlets import Bool, Int, Unicode, List, Dict, Enum # noqa
 
-from jetrep.core.message import MessageHandler as MH
-from jetrep.core.message import MessageType as MT # noqa
+from jetrep.core.message import MessageHandler
 from jetrep.core.message import MainHandlerThread
+from jetrep.core.message import (
+    MessageType,
+    CommandType,
+)
 from jetrep.core.handlers import (
     LogHandler,
     StateHandler,
     DefaultHandler
+)
+from jetrep.core.tasks import (
+    ServiceRPC
 )
 from jetrep.utils.shell import (
     util_check_service,
@@ -30,7 +35,7 @@ from jetrep.utils.shell import (
 )
 
 
-class NativeHandler(MH):
+class NativeHandler(MessageHandler):
     def __init__(self, app):
         super(NativeHandler, self).__init__(app)
 
@@ -70,12 +75,21 @@ class JetRepApp(Application):
     def _log_default(self):
         log = logging.getLogger(self.__class__.__name__)
         log.setLevel(self.log_level)
+
+        # def thread_id_filter(record):
+        #     record.thread_id = threading.get_native_id()
+        #     return record
+
         formatter = self._log_formatter_cls(fmt=self.log_format, datefmt=self.log_datefmt)
         console = logging.StreamHandler()
         console.setFormatter(formatter)
+        # console.addFilter(thread_id_filter)
+
         filelog = RotatingFileHandler(
                 self.log_file, mode='a', maxBytes=5*1024*1024, backupCount=2, encoding=None, delay=0)
         filelog.setFormatter(formatter)
+        # filelog.addFilter(thread_id_filter)
+
         log.addHandler(console)
         log.addHandler(filelog)
         return log
@@ -93,30 +107,30 @@ class JetRepApp(Application):
         StateHandler.instance(self)
         DefaultHandler.instance(self)
 
-        self.server = zerorpc.Server(self.native)
-        self.server.bind(f'tcp://{self.rpc_host}:{self.rpc_port}')
+        self.log.info('Rpc server starting')
+        self.rpc_task = ServiceRPC(self, self.rpc_host, self.rpc_port)
 
     def start(self):
         self.log.info('Starting...')
         self.looper.start()
-        self.native.send_message(MessageType.CTRL)
+        self.rpc_task.start()
+        self.native.send_message(MessageType.CTRL, CommandType.APP_START)
 
     def stop(self):
         self.log.info('Stopping...')
-        self.stop_gst_launch()
+        self.native.send_message(MessageType.CTRL, CommandType.APP_STOP)
         for _ in range(10):
             result = self.status()
             self.log.info(f'Status: [{result}]')
             if not any(list(result.values())):
                 break
             time.sleep(1)
-        self.stop_api_handler()
-        self.server.stop()
+        self.rpc_task.stop()
 
     def status(self):
         status = {}
         status[self.service_jetgst] = util_check_service(self.service_jetgst)
-        status[self.service_srsrtc] = util_check_service(self.service_srsrtc) 
+        status[self.service_srsrtc] = util_check_service(self.service_srsrtc)
         status[self.service_repapi] = util_check_service(self.service_repapi)
         return status
 
@@ -154,16 +168,16 @@ class JetRepApp(Application):
             self.initialize(argv)
             self.setup()
             self.start()
-            self.server.run()
+            self.rpc_task.join()
         except Exception:
             self.log.error(traceback.format_exc(limit=6))
-            os._exit(os.EX_IOERR)
+            os._exit(os.EX_OK)
 
 
 def signal_handler(sig, frame):
     app.log.info('JetRepApp handle signal: [%d]' % sig)
     app.stop()
-    sys.exit(0)
+    os._exit(os.EX_OK)
 
 
 signal.signal(signal.SIGINT, signal_handler)
