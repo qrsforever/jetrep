@@ -7,8 +7,8 @@
 # @version 1.0
 # @date 2021-11-11 21:01
 
-import sys, signal, traceback # noqa
-import logging
+import sys, os, signal, traceback # noqa
+import logging, time
 import zerorpc
 from logging.handlers import RotatingFileHandler
 import traitlets
@@ -18,9 +18,16 @@ from traitlets import Bool, Int, Unicode, List, Dict, Enum # noqa
 from jetrep.core.message import MessageHandler as MH
 from jetrep.core.message import MessageType as MT # noqa
 from jetrep.core.message import MainHandlerThread
-from jetrep.core.handlers import LogHandler
-from jetrep.core.handlers import StateHandler
-from jetrep.core.handlers import DefaultHandler
+from jetrep.core.handlers import (
+    LogHandler,
+    StateHandler,
+    DefaultHandler
+)
+from jetrep.utils.shell import (
+    util_check_service,
+    util_start_service,
+    util_stop_service
+)
 
 
 class NativeHandler(MH):
@@ -37,9 +44,12 @@ class JetRepApp(Application):
     """
     name = Unicode('JetRepApp')
     description = Unicode(__doc__)
+    service_repapi = Unicode('repapi', read_only=True)
+    service_jetgst = Unicode('jetgst', read_only=True)
+    service_srsrtc = Unicode('srsrtc', read_only=True)
     config_file = Unicode('', help='Load this config file').tag(config=True)
     log_file = Unicode('/tmp/jetrep.log', help='Write log to file ').tag(config=True)
-    rpc_host = Unicode('0.0.0.0', help='Set zerorpc host').tag(config=True)
+    rpc_host = Unicode('127.0.0.1', help='Set zerorpc host').tag(config=True)
     rpc_port = Int(8181, help='Set zerorpc port').tag(config=True)
 
     classes = List([])
@@ -83,23 +93,81 @@ class JetRepApp(Application):
         StateHandler.instance(self)
         DefaultHandler.instance(self)
 
+        self.server = zerorpc.Server(self.native)
+        self.server.bind(f'tcp://{self.rpc_host}:{self.rpc_port}')
+
     def start(self):
         self.log.info('Starting...')
         self.looper.start()
+        self.native.send_message(MessageType.CTRL)
 
     def stop(self):
-        self.log.info('Stoped.')
+        self.log.info('Stopping...')
+        self.stop_gst_launch()
+        for _ in range(10):
+            result = self.status()
+            self.log.info(f'Status: [{result}]')
+            if not any(list(result.values())):
+                break
+            time.sleep(1)
+        self.stop_api_handler()
+        self.server.stop()
+
+    def status(self):
+        status = {}
+        status[self.service_jetgst] = util_check_service(self.service_jetgst)
+        status[self.service_srsrtc] = util_check_service(self.service_srsrtc) 
+        status[self.service_repapi] = util_check_service(self.service_repapi)
+        return status
+
+    def start_gst_launch(self):
+        self.log.info('Start Gst Launch')
+        if util_check_service(self.service_jetgst):
+            util_stop_service(self.service_jetgst)
+        return not util_start_service(self.service_jetgst)
+
+    def stop_gst_launch(self):
+        self.log.info('Stop Gst Launch')
+        return not util_stop_service(self.service_jetgst) \
+                if util_check_service(self.service_jetgst) else True
+
+    def start_srs_webrtc(self):
+        self.log.info('Start Srs Webrtc')
+        return not util_start_service(self.service_srsrtc, True)
+
+    def stop_srs_webrtc(self):
+        self.log.info('Stop Srs Webrtc')
+        return not util_stop_service(self.service_srsrtc) \
+                if util_check_service(self.service_srsrtc) else True
+
+    def start_api_handler(self):
+        self.log.info('Start Api Handler')
+        return not util_start_service(self.service_repapi, True)
+
+    def stop_api_handler(self):
+        self.log.info('Stop Api Handler')
+        return not util_stop_service(self.service_repapi) \
+                if util_check_service(self.service_repapi) else True
 
     def run(self, argv=None):
         try:
             self.initialize(argv)
             self.setup()
             self.start()
-            server = zerorpc.Server(self.native)
-            server.bind(f'tcp:{self.rpc_host}:{self.rpc_port}')
-            server.run()
+            self.server.run()
         except Exception:
             self.log.error(traceback.format_exc(limit=6))
+            os._exit(os.EX_IOERR)
+
+
+def signal_handler(sig, frame):
+    app.log.info('JetRepApp handle signal: [%d]' % sig)
+    app.stop()
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
 
 
 if __name__ == "__main__":

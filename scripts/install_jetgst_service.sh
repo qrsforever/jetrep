@@ -6,19 +6,19 @@ TOP_DIR=$(dirname $CUR_DIR)
 DST_DIR=/etc/systemd/system/
 
 SERVICE=jetgst.service
-RESTAPI=http://0.0.0.0:8282/apis/systemd/v1/status
+RESTAPI=http://127.0.0.1:8282/apis/systemd/v1/status
 
+XRUN=
 if [[ 0 != $(id -u) ]]
 then
-    echo "Use root execute!!!"
-    exit 0
+    XRUN=sudo
 fi
 
 cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
 [Unit]
     Description=Gst pipeline start launch
     Documentation=http://jetrep.hzcsai.com
-    After=srs.service multi-user.target
+    After=srsrtc.service multi-user.target
 
 [Service]
     Type=simple
@@ -28,9 +28,11 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     WorkingDirectory=$TOP_DIR
     EnvironmentFile=$TOP_DIR/etc/jetgst.env
     Restart=always
-    RestartSec=5
+    RestartSec=10
     ExecStartPre=-/bin/systemctl restart nvargus-daemon
+    ExecStartPre=/usr/bin/curl -d '{"name": "jetgst", "status": "starting"}' $RESTAPI
     ExecStart=/usr/bin/python3 jetrep/stream -c etc/jetgst.json
+    ExecStartPost=/bin/sleep 2
     ExecStartPost=/usr/bin/curl -d '{"name": "jetgst", "status": "started"}' $RESTAPI
     ExecStopPost=/usr/bin/curl -d '{"name": "jetgst", "status": "stopped"}' $RESTAPI
     TimeoutStartSec=10
@@ -42,13 +44,14 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     WantedBy=multi-user.target
 EOF
 
-cp $TOP_DIR/etc/systemd/$SERVICE $DST_DIR
-systemctl daemon-reload
-systemctl enable $SERVICE
-systemctl restart $SERVICE
-systemctl status $SERVICE
+$XRUN cp $TOP_DIR/etc/systemd/$SERVICE $DST_DIR
+$XRUN systemctl daemon-reload
+# $XRUN systemctl enable $SERVICE
+$XRUN systemctl restart $SERVICE
+$XRUN systemctl status $SERVICE
+journalctl -u $SERVICE --no-pager -n 10
 echo "-------------------------------"
 echo ""
-echo "journalctl -u $SERVICE -f"
+echo "journalctl -u $SERVICE -f -n 100"
 echo ""
 echo "-------------------------------"

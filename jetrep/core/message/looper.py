@@ -21,7 +21,7 @@ class MainHandlerThread(threading.Thread):
         while True:
             try:
                 msg = MH.mq.get(timeout=3)
-                print(msg)
+                # print(msg)
                 if msg.what == MessageType.QUIT:
                     break
                 if msg.what not in MH.handlers:

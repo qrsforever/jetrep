@@ -8,12 +8,12 @@
 # @date 2021-11-11 17:49
 
 import json
-from flask import Blueprint, request, Response
+from flask import Blueprint, request, Response # noqa
 from flask import current_app as app
 
 srs = Blueprint("srs", __name__)
 
-OK = Response(status=200, headers={})
+OK = "0" # Response(status=200, headers={})
 
 
 @srs.route('/on_connect', methods=['POST', 'PUT'])

@@ -14,7 +14,14 @@ import zerorpc
 from flask import Flask
 from flask_cors import CORS
 from gevent import pywsgi
+from gevent import signal
 from jetrep.api.routers import srs, systemd
+from jetrep.utils.net import util_check_port
+from jetrep.core.message import (
+    MessageType,
+    StateType,
+    ServiceType,
+)
 
 app = Flask('JetRep::Apiserver')
 app.debug = True
@@ -33,7 +40,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
             '--host',
-            default='0.0.0.0',
+            default='127.0.0.1',
             type=str,
             dest='host',
             help="host to run jetrep api service")
@@ -45,7 +52,7 @@ if __name__ == "__main__":
             help="port to run jetrep api service")
     parser.add_argument(
             '--rpc_host',
-            default='0.0.0.0',
+            default='127.0.0.1',
             type=str,
             dest='rpc_host',
             help="rpc host")
@@ -59,15 +66,31 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     try:
-        app.jetrep = zerorpc.Client(
-            timeout=3,
-            passive_heartbeat=True)
-        ret = app.jetrep.connect('tcp://{}:{}'.format(args.rpc_host, args.rpc_port))  # noqa
-        if len(ret) == 0 or ret[0] is None:
-            raise RuntimeError('Connect jetrep zerorpc error')
-        server = pywsgi.WSGIServer((args.host, args.port), app)
-        server.serve_forever()
+        app.jetrep = None
+        if util_check_port(args.rpc_port, args.rpc_host, trycnt=3):
+            app.jetrep = zerorpc.Client(
+                timeout=3,
+                passive_heartbeat=True)
+            app.jetrep.connect('tcp://{}:{}'.format(args.rpc_host, args.rpc_port))
+            app.jetrep.send_message(MessageType.STATE, ServiceType.API, StateType.STARTING, 'repapi')
+
+            server = pywsgi.WSGIServer((args.host, args.port), app)
+
+            def shutdown(num, frame):
+                app.jetrep.send_message(MessageType.STATE, ServiceType.API, StateType.STOPPING, 'repapi')
+                server.stop()
+                sys.stderr.write('End!!!\n')
+                sys.stderr.flush()
+                exit(0)
+
+            signal.signal(signal.SIGTERM, shutdown)
+            signal.signal(signal.SIGINT, shutdown)
+            server.serve_forever()
+        else:
+            sys.stderr.write(f'Cannot connect to {args.rpc_host}:{args.rpc_port}!\n')
+    # except (KeyboardInterrupt, SystemExit):
     except Exception as err:
-        sys.stderr.write(f'{err}\n')
+        sys.stderr.write(f'{err}!\n')
     finally:
-        pass
+        if app.jetrep and server.started:
+            shutdown()

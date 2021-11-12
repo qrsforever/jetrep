@@ -8,11 +8,11 @@
 # @date 2021-11-11 19:40
 
 
-from enum import Enum, unique
+from enum import IntEnum, unique
 
 
 @unique
-class MessageType(Enum):
+class MessageType(IntEnum):
     LOG = 1
     CTRL = 2
     STATE = 3
@@ -20,7 +20,7 @@ class MessageType(Enum):
 
 
 @unique
-class LogType(Enum):
+class LogType(IntEnum):
     DEBUG = 1
     INFO = 2
     WARN = 3
@@ -28,14 +28,14 @@ class LogType(Enum):
 
 
 @unique
-class ServiceType(Enum):
+class ServiceType(IntEnum):
     SRS = 1
     GST = 2
     API = 3
 
 
 @unique
-class StateType(Enum):
+class StateType(IntEnum):
     NOP = 1
     STARTING = 2
     STARTED = 3

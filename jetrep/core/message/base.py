@@ -19,6 +19,9 @@ class Message(object):
         self.obj = obj
         self.callback = callback # TODO
 
+    def __str__(self):
+        return f'what[{self.what}], arg1[{self.arg1}], arg2[{self.arg2}], obj[{type(self.obj)}]'
+
     @staticmethod
     def obtain(what, arg1, arg2, obj, cb=None):
         return Message(what, arg1, arg2, obj, cb)
@@ -34,6 +37,7 @@ class MessageHandler(metaclass=abc.ABCMeta):
                 self.handlers[ty] = []
             self.handlers[ty].append(self)
         self.app = app
+        self.log = app.log
 
     @abc.abstractmethod
     def handle_message(self, what, arg1, arg2, obj):
@@ -44,6 +48,7 @@ class MessageHandler(metaclass=abc.ABCMeta):
         return self.mq.put(msg)
 
     def dispatch_message(self, msg):
+        self.log.info(msg)
         if msg.callback:
             return msg.callback.handle_message(msg.what, msg.arg1, msg.arg2, msg.obj)
         return self.handle_message(msg.what, msg.arg1, msg.arg2, msg.obj)

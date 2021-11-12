@@ -20,13 +20,17 @@ from jetrep.core.message import (
 systemd = Blueprint("systemd", __name__)
 
 OK = Response(status=200, headers={})
+ERR = Response(status=500, headers={})
 
 SER_STR2INT = {
+    'repapi': ServiceType.API,
+    'srsrtc': ServiceType.SRS,
     'jetgst': ServiceType.GST,
-    'srs': ServiceType.SRS
 }
 
 STA_STR2INT = {
+    'starting': StateType.STARTING,
+    'stopping': StateType.STOPPING,
     'started': StateType.STARTED,
     'stopped': StateType.STOPPED,
 }
@@ -38,8 +42,9 @@ def _systemd_status():
     app.logger.info(reqjson)
     sname = reqjson['name']
     state = reqjson['status']
-    app.jetrep.send_message(MessageType.LOG, LogType.INFO, obj=reqjson)
+    app.jetrep.send_message(MessageType.LOG, LogType.INFO, -1, reqjson)
     if sname not in SER_STR2INT or state not in STA_STR2INT:
         app.logger.warning(f'Not support service name [{sname}] and state [{state}]')
-    app.jetrep.send_message(MessageType.STATE, SER_STR2INT[sname], STA_STR2INT[state])
+        return ERR
+    app.jetrep.send_message(MessageType.STATE, SER_STR2INT[sname], STA_STR2INT[state], sname)
     return OK

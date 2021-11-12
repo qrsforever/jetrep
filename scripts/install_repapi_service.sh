@@ -6,11 +6,12 @@ TOP_DIR=$(dirname $CUR_DIR)
 DST_DIR=/etc/systemd/system/
 
 SERVICE=repapi.service
+RESTAPI=http://127.0.0.1:8282/apis/systemd/v1/status
 
+XRUN=
 if [[ 0 != $(id -u) ]]
 then
-    echo "Use root execute!!!"
-    exit 0
+    XRUN=sudo
 fi
 
 cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
@@ -28,7 +29,8 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     Environment="PYTHONPATH=$TOP_DIR"
     Restart=always
     RestartSec=5
-    ExecStart=/usr/bin/python3 jetrep/api/server.py --port 8282 --rpc_port 8181
+    ExecStart=/usr/bin/python3 jetrep/api/server.py --host 127.0.0.1 --port 8282 --rpc_host 127.0.0.1 --rpc_port 8181
+    ExecStop=-/usr/bin/curl -d '{"name": "repapi", "status": "stopped"}' $RESTAPI
     TimeoutStartSec=10
     TimeoutStopSec=5
     StandardOutput=syslog
@@ -38,13 +40,14 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     WantedBy=multi-user.target
 EOF
 
-cp $TOP_DIR/etc/systemd/$SERVICE $DST_DIR
-systemctl daemon-reload
-systemctl enable $SERVICE
-systemctl restart $SERVICE
-systemctl status $SERVICE
+$XRUN cp $TOP_DIR/etc/systemd/$SERVICE $DST_DIR
+$XRUN systemctl daemon-reload
+# $XRUN systemctl enable $SERVICE
+$XRUN systemctl restart $SERVICE
+$XRUN systemctl status $SERVICE
+journalctl -u $SERVICE --no-pager -n 10
 echo "-------------------------------"
 echo ""
-echo "journalctl -u $SERVICE -f"
+echo "journalctl -u $SERVICE -f -n 100"
 echo ""
 echo "-------------------------------"

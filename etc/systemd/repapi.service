@@ -5,14 +5,15 @@
 
 [Service]
     Type=simple
-    User=root
-    Group=root
+    User=nano
+    Group=nano
     UMask=0000
     WorkingDirectory=/home/nano/omega/jetson/jetrep
     Environment="PYTHONPATH=/home/nano/omega/jetson/jetrep"
     Restart=always
     RestartSec=5
-    ExecStart=/usr/bin/python3 jetrep/api/server.py --port 8282 --rpc_port 8181
+    ExecStart=/usr/bin/python3 jetrep/api/server.py --host 127.0.0.1 --port 8282 --rpc_host 127.0.0.1 --rpc_port 8181
+    ExecStop=-/usr/bin/curl -d '{"name": "repapi", "status": "stopped"}' http://127.0.0.1:8282/apis/systemd/v1/status
     TimeoutStartSec=10
     TimeoutStopSec=5
     StandardOutput=syslog

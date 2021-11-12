@@ -14,13 +14,13 @@ from jetrep.core.message import MessageType
 
 class DefaultHandler(MessageHandler):
     def __init__(self, app):
-        super(DefaultHandler, self).__init__(keys=[MessageType.CTRL, MessageType.QUIT])
+        super(DefaultHandler, self).__init__(app, keys=[MessageType.CTRL, MessageType.QUIT])
         self.app = app
 
     def handle_message(self, what, arg1, arg2, obj):
         if what == MessageType.CTRL:
             return True
-        
+
         return False
 
     @staticmethod

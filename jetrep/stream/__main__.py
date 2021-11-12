@@ -127,10 +127,12 @@ class GstPipelineApp(Application):
             self.log.info('Stream EOS')
             loop.quit()
         elif t == Gst.MessageType.ERROR:
-            self.log.error('{}: {}'.format(msg.parse_error()))
+            err, msg = msg.parse_error()
+            self.log.error("(%s:%d '%s'): %s" % (err.domain, err.code, err.message, msg))
             loop.quit()
         elif t == Gst.MessageType.WARNING:
-            self.log.warning('{}: {}'.format(msg.parse_warning()))
+            err, msg = msg.parse_error()
+            self.log.warning("(%s:%d '%s'): %s" % (err.domain, err.code, err.message, msg))
         return True
 
     def run(self, argv=None):
