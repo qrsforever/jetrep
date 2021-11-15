@@ -9,6 +9,7 @@
 
 import os
 import time
+import jsonschema
 import traitlets
 from traitlets.config.configurable import Configurable
 from traitlets import Bool, Int, Float, Unicode, Tuple, List, Dict, Enum # noqa
@@ -22,6 +23,30 @@ class PSContext(Configurable):
     area_rate = Float(default_value=0.002, min=0.0, max=0.05).tag(config=True)
     strides = List(trait=Int(), default_value=[4], minlen=1, maxlen=3).tag(config=True)
     snip_root = Unicode('/tmp').tag(config=True)
+
+    # synth_video_rtmp = Dict(traits={'server': Unicode(), 'port': Int(1935), 'stream': Unicode()})
+    synth_video_schema = {
+         'type' : 'object',
+         'properties' : {
+             'rtmp': {
+                 'type': 'object',
+                 'properties': {
+                     'server' : {'type' : 'string'},
+                     'port': {'type': 'number'},
+                     'stream' : {'type' : 'string'},
+                 },
+                 'required': ['server', 'port', 'stream']
+             },
+             'file': {
+                 'type': 'object',
+                 'properties': {
+                     'path': {'type': 'string'},
+                 },
+                 'required': ['path']
+             }
+         }
+    }
+    synth_video = Dict().tag(config=True)
 
     F = 64
     K = F * 15
@@ -127,7 +152,15 @@ class PSContext(Configurable):
             raise traitlets.TraitError(f'Parameter focus_box is invalid: {value}')
         return value
 
+    @traitlets.validate('synth_video')
+    def _validate_value(self, proposal):
+        try:
+            jsonschema.validate(proposal['value'], self.synth_video_schema)
+        except jsonschema.ValidationError as e:
+            raise traitlets.TraitError(e)
+        return proposal['value']
+
     def __str__(self):
         str_ = f'_area_thresh: {self._area_thresh} _focus_box: {self._focus_box} _black_box: {self._black_box} '
-        str_ += f'_stride: {self._stride}'
+        str_ += f'_stride: {self._stride} synth_video: {self.synth_video}'
         return str_

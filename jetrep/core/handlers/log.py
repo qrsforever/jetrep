@@ -36,7 +36,7 @@ class LogHandler(MessageHandler):
             self.logger.debug(f'{obj}')
         elif arg1 == LogType.INFO:
             self.logger.info(f'{obj}')
-        elif arg1 == LogType.WARN:
+        elif arg1 == LogType.WARNING:
             self.logger.warn(f'{obj}')
         elif arg1 == LogType.ERROR:
             self.logger.error(f'{obj}')

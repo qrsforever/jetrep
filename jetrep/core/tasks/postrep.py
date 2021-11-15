@@ -7,7 +7,7 @@
 # @version 1.0
 # @date 2021-11-15 17:27
 
-import cv2, os
+import cv2, os, time
 import numpy as np
 import queue
 import threading
@@ -39,12 +39,16 @@ class PostProcessRep(threading.Thread):
     def stop(self):
         self.app.native.send_message(MessageType.STATE, ServiceType.RT_INFER_POSTREP, StateType.STOPPING)
         self.exit = True
+        for i in range(5):
+            self.mq_out.put((-1, None))
+            if not self.is_alive():
+                break
+            time.sleep(1)
 
     def run(self):
         ctx, native = self.app.psctx, self.app.native
+        native.logi(f"Start postrep_process_worker[{ctx}]")
 
-        native.logi("Start postrep_process_worker...")
-    
         gst_str = ' ! '.join([
             'appsrc',
             'videoconvert',
@@ -55,7 +59,7 @@ class PostProcessRep(threading.Thread):
             'h264parse',
             'queue',
             'flvmux streamable=true name=mux',
-            'rtmpsink max-lateness=500000 location=rtmp://0.0.0.0:1935/live/post_test'
+            'rtmpsink max-lateness=500000 location=rtmp://0.0.0.0:1935/live/2'
         ])
         writer = cv2.VideoWriter(gst_str, 0, ctx.frame_rate, ctx.frame_size)
 
@@ -64,6 +68,8 @@ class PostProcessRep(threading.Thread):
         while not self.exit:
             try:
                 token, bucket = self.mq_out.get(timeout=3)
+                if token < 0:
+                    break
             except queue.Empty:
                 continue
             except Exception as err:
@@ -71,15 +77,15 @@ class PostProcessRep(threading.Thread):
                 break
 
             within_scores, period_scores = bucket.within_scores, bucket.period_scores
-            
+
             per_frame_periods = np.argmax(period_scores, axis=-1) + 1
             conf_pred_periods = np.max(softmax(period_scores, axis=-1), axis=-1)
             conf_pred_periods = np.where(per_frame_periods < 3, 0.0, conf_pred_periods)
-                
+
             within_period_scores = sigmoid(within_scores)[:, 0]
             within_period_scores = np.sqrt(within_period_scores * conf_pred_periods)
             within_period_binary = np.asarray(within_period_scores > 0.5)
-            
+
             per_frame_counts = within_period_binary * np.where(per_frame_periods < 3, 0.0, 1 / per_frame_periods)
 
             native.logi(f'{bucket.raw_frames_path}: {sum(per_frame_counts)}')
@@ -103,6 +109,6 @@ class PostProcessRep(threading.Thread):
                 cap.release()
                 os.unlink(bucket.raw_frames_path)
             del bucket
-        writer.release()    
+        writer.release()
         native.logw('PostRep process worker end!')
         native.send_message(MessageType.STATE, ServiceType.RT_INFER_POSTREP, StateType.STOPPED)

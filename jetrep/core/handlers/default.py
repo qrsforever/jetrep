@@ -21,7 +21,7 @@ class DefaultHandler(MessageHandler):
         super(DefaultHandler, self).__init__(app, keys=[MessageType.CTRL, MessageType.QUIT])
 
     def handle_message(self, what, arg1, arg2, obj):
-        self.log.info(f'{what} {arg1} {arg2} {obj}')
+        self.log.debug(f'{what} {arg1} {arg2} {obj}')
         if what == MessageType.CTRL:
             if arg1 == CommandType.APP_START:
                 return self.app.start_api_handler()

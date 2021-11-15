@@ -9,6 +9,13 @@
         "focus_box": [0, 0, 1, 1],
         "black_box": [0, 0, 0, 0],
         "area_rate": 0.001,
-        "strides": [4]
+        "strides": [6],
+        "synth_video": {
+            "rtmp": {
+                "server": "0.0.0.0",
+                "port": 1935,
+                "stream": "2"
+            }
+        }
     }
 }

@@ -7,8 +7,7 @@
 # @version 1.0
 # @date 2021-11-12 22:19
 
-import sys, time, signal
-import zerorpc
+import time
 import queue
 import numpy as np
 from multiprocessing import Process, Event
@@ -37,12 +36,15 @@ class InferProcessRT(Process):
         self.exit.set()
         for i in range(15):
             self.mq_in.put((-1, None))
-            if not self.is_alive():
+            if not self.exit.is_set():
+                print('1' * 60)
                 break
             time.sleep(1)
 
     def run(self):
+        import sys, signal, zerorpc
         signal.signal(signal.SIGINT, signal.SIG_IGN)
+        signal.signal(signal.SIGTERM, signal.SIG_IGN)
         remote = zerorpc.Client(
             connect_to='tcp://{}:{}'.format(self.ip, self.port),
             timeout=10,
@@ -90,3 +92,5 @@ class InferProcessRT(Process):
         if remote:
             remote.send_message(MessageType.STATE, ServiceType.RT_INFER_ENGINE, StateType.STOPPED)
             remote.close()
+        self.exit.clear()
+        print("end "*30)

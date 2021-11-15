@@ -44,12 +44,12 @@ class MessageHandler(metaclass=abc.ABCMeta):
         pass
 
     def send_message(self, what, arg1=-1, arg2=-1, obj=None):
-        self.log.info(f'{what}, {arg1}, {arg2} {obj}')
+        # self.log.info(f'{what}, {arg1}, {arg2} {obj}')
         msg = Message.obtain(what, arg1, arg2, obj)
         return self.mq.put(msg)
 
     def dispatch_message(self, msg):
-        self.log.info(msg)
+        # self.log.info(msg)
         if msg.callback:
             return msg.callback.handle_message(msg.what, msg.arg1, msg.arg2, msg.obj)
         return self.handle_message(msg.what, msg.arg1, msg.arg2, msg.obj)

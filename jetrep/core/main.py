@@ -42,6 +42,7 @@ from jetrep.core import PSContext
 
 
 multiprocessing.set_start_method('forkserver', force=True)
+# multiprocessing.set_start_method('spawn', force=True)
 
 
 class NativeHandler(MessageHandler):
@@ -128,6 +129,7 @@ class JetRepApp(Application):
         self.parse_command_line(argv)
         if self.config_file:
             self.load_config_file(self.config_file)
+        print(self.print_options())
 
     def setup(self):
         self.log_looper = LogHandlerThread()
@@ -157,7 +159,7 @@ class JetRepApp(Application):
     def stop(self):
         self.log.info('Stopping...')
         self.native.send_message(MessageType.CTRL, CommandType.APP_STOP)
-        for _ in range(10):
+        for _ in range(20):
             result = self.status()
             self.log.info(f'Status: [{result}]')
             if not any(list(result.values())):

@@ -130,4 +130,4 @@ class PreProcessRep(threading.Thread):
         if cap.isOpened():
             cap.release()
         native.logw('PreRep process worker end!')
-        self.native.send_message(MessageType.STATE, ServiceType.RT_INFER_PREREP, StateType.STOPPED)
+        native.send_message(MessageType.STATE, ServiceType.RT_INFER_PREREP, StateType.STOPPED)

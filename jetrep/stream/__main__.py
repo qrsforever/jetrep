@@ -77,6 +77,7 @@ class GstPipelineApp(Application):
         self.parse_command_line(argv)
         if self.config_file:
             self.load_config_file(self.config_file)
+        print(self.print_options())
 
     def setup(self):
         self.log.info('Setup components')

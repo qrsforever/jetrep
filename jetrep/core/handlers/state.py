@@ -47,7 +47,7 @@ class StateHandler(MessageHandler):
         return False
 
     def handle_message(self, what, arg1, arg2, obj):
-        self.log.info(f'{what} {arg1} {arg2} {obj}')
+        self.log.debug(f'{what} {arg1} {arg2} {obj}')
         if what != MessageType.STATE:
             return False
         if arg1 == ServiceType.SRS:
