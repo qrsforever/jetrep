@@ -8,6 +8,7 @@
 # @date 2021-11-11 20:59
 
 
+import time
 from jetrep.core.message import MessageHandler
 from jetrep.core.message import (
     MessageType,
@@ -25,7 +26,13 @@ class DefaultHandler(MessageHandler):
             if arg1 == CommandType.APP_START:
                 return self.app.start_api_handler()
             if arg1 == CommandType.APP_STOP:
-                return self.app.stop_gst_launch()
+                self.app.stop_trt_postrep()
+                self.app.stop_trt_prerep()
+                self.app.stop_trt_engine()
+                self.app.stop_gst_launch()
+                self.app.stop_srs_webrtc()
+                self.app.stop_api_handler()
+                return True
         return False
 
     @staticmethod
@@ -34,7 +41,6 @@ class DefaultHandler(MessageHandler):
 
 
 if __name__ == "__main__":
-    import time
     from jetrep.core.message import MainHandlerThread
     handler = DefaultHandler()
     main = MainHandlerThread()

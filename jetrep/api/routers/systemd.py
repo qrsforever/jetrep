@@ -42,9 +42,9 @@ def _systemd_status():
     app.logger.info(reqjson)
     sname = reqjson['name']
     state = reqjson['status']
-    app.send_message(MessageType.LOG, LogType.INFO, -1, reqjson)
+    app.remote.logi(reqjson)
     if sname not in SER_STR2INT or state not in STA_STR2INT:
         app.logger.warning(f'Not support service name [{sname}] and state [{state}]')
         return ERR
-    app.send_message(MessageType.STATE, SER_STR2INT[sname], STA_STR2INT[state], sname)
+    app.remote.send_message(MessageType.STATE, SER_STR2INT[sname], STA_STR2INT[state], sname)
     return OK

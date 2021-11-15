@@ -30,7 +30,7 @@ class CommandType(IntEnum):
 class LogType(IntEnum):
     DEBUG = 1
     INFO = 2
-    WARN = 3
+    WARNING = 3
     ERROR = 4
 
 
@@ -41,6 +41,8 @@ class ServiceType(IntEnum):
     API = 3
 
     RT_INFER_ENGINE = 4
+    RT_INFER_PREREP = 5
+    RT_INFER_POSTREP = 6
 
 
 @unique

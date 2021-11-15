@@ -10,15 +10,17 @@
 import sys, os, signal, traceback # noqa
 import logging, time
 import traitlets
+import multiprocessing
+from multiprocessing import Queue
 from logging.handlers import RotatingFileHandler
 from traitlets.config.application import Application
 from traitlets import Bool, Int, Unicode, List, Dict, Enum # noqa
-
 from jetrep.core.message import MessageHandler
-from jetrep.core.message import MainHandlerThread
+from jetrep.core.message import MainHandlerThread, LogHandlerThread
 from jetrep.core.message import (
     MessageType,
     CommandType,
+    LogType,
 )
 from jetrep.core.handlers import (
     LogHandler,
@@ -26,21 +28,41 @@ from jetrep.core.handlers import (
     DefaultHandler
 )
 from jetrep.core.tasks import (
-    ServiceRPC
+    ServiceRPC,
+    InferProcessRT,
+    PreProcessRep,
+    PostProcessRep,
 )
 from jetrep.utils.shell import (
     util_check_service,
     util_start_service,
     util_stop_service
 )
+from jetrep.core import PSContext
+
+
+multiprocessing.set_start_method('forkserver', force=True)
 
 
 class NativeHandler(MessageHandler):
-    def __init__(self, app):
+    def __init__(self, app, log_handler):
         super(NativeHandler, self).__init__(app)
+        self.log_handler = log_handler
 
     def handle_message(self, what, arg1, arg2, obj):
         pass
+
+    def logd(self, s):
+        self.log_handler.send_message(MessageType.LOG, LogType.DEBUG, obj=f'{s}')
+
+    def logi(self, s):
+        self.log_handler.send_message(MessageType.LOG, LogType.INFO, obj=f'{s}')
+
+    def logw(self, s):
+        self.log_handler.send_message(MessageType.LOG, LogType.WARNING, obj=f'{s}')
+
+    def loge(self, s):
+        self.log_handler.send_message(MessageType.LOG, LogType.ERROR, obj=f'{s}')
 
 
 class JetRepApp(Application):
@@ -49,19 +71,27 @@ class JetRepApp(Application):
     """
     name = Unicode('JetRepApp')
     description = Unicode(__doc__)
-    service_repapi = Unicode('repapi', read_only=True)
-    service_jetgst = Unicode('jetgst', read_only=True)
-    service_srsrtc = Unicode('srsrtc', read_only=True)
+
+    svc_name_repapi = Unicode('repapi', read_only=True)
+    svc_name_jetgst = Unicode('jetgst', read_only=True)
+    svc_name_srsrtc = Unicode('srsrtc', read_only=True)
+    tsk_name_engine = Unicode('engine', read_only=True)
+    tsk_name_prerep = Unicode('prerep', read_only=True)
+    tsk_name_postrep = Unicode('postrep', read_only=True)
+
     config_file = Unicode('', help='Load this config file').tag(config=True)
     log_file = Unicode('/tmp/jetrep.log', help='Write log to file ').tag(config=True)
-    rpc_host = Unicode('127.0.0.1', help='Set zerorpc host').tag(config=True)
+
+    rpc_ip = Unicode('127.0.0.1', help='Set zerorpc host').tag(config=True)
     rpc_port = Int(8181, help='Set zerorpc port').tag(config=True)
 
-    classes = List([])
+    classes = List([PSContext])
 
     aliases = Dict(
         dict(
-            c='JetRepApp.config_file'
+            c='JetRepApp.config_file',
+            addr='JetRepApp.rpc_ip',
+            port='JetRepApp.rpc_port'
         )
     )
 
@@ -100,19 +130,27 @@ class JetRepApp(Application):
             self.load_config_file(self.config_file)
 
     def setup(self):
-        self.looper = MainHandlerThread()
-        self.native = NativeHandler(self)
+        self.log_looper = LogHandlerThread()
+        self.main_looper = MainHandlerThread()
 
-        LogHandler.instance(self)
         StateHandler.instance(self)
         DefaultHandler.instance(self)
 
-        self.log.info('Rpc server starting')
-        self.rpc_task = ServiceRPC(self, self.rpc_host, self.rpc_port)
+        self.native = NativeHandler(self, LogHandler.instance(self))
+
+        self.log.info('Setup Rpc server')
+        self.rpc_task = ServiceRPC(self, self.rpc_ip, self.rpc_port)
+
+        self.log.info('Setup Trt Engine')
+        self.mq_in, self.mq_out, self.psctx = Queue(), Queue(), PSContext()
+        self.trt_engine_task = InferProcessRT(self, self.rpc_ip, self.rpc_port, self.mq_in, self.mq_out)
+        self.trt_prerep_task = PreProcessRep(self, self.mq_in, self.mq_out)
+        self.trt_postrep_task = PostProcessRep(self, self.mq_in, self.mq_out)
 
     def start(self):
         self.log.info('Starting...')
-        self.looper.start()
+        self.log_looper.start()
+        self.main_looper.start()
         self.rpc_task.start()
         self.native.send_message(MessageType.CTRL, CommandType.APP_START)
 
@@ -129,39 +167,73 @@ class JetRepApp(Application):
 
     def status(self):
         status = {}
-        status[self.service_jetgst] = util_check_service(self.service_jetgst)
-        status[self.service_srsrtc] = util_check_service(self.service_srsrtc)
-        status[self.service_repapi] = util_check_service(self.service_repapi)
+        status[self.svc_name_jetgst] = util_check_service(self.svc_name_jetgst)
+        status[self.svc_name_srsrtc] = util_check_service(self.svc_name_srsrtc)
+        status[self.svc_name_repapi] = util_check_service(self.svc_name_repapi)
+
+        status[self.tsk_name_engine] = self.trt_engine_task.is_alive() if self.trt_engine_task else False
+        status[self.tsk_name_prerep] = self.trt_prerep_task.is_alive() if self.trt_prerep_task else False
+        status[self.tsk_name_postrep] = self.trt_postrep_task.is_alive() if self.trt_postrep_task else False
         return status
+
+    def start_trt_postrep(self):
+        self.log.info('Start Trt PostRep')
+        self.trt_postrep_task.start()
+        return True
+
+    def stop_trt_postrep(self):
+        self.log.info('Stop Trt PostRep')
+        self.trt_postrep_task.stop()
+        return True
+
+    def start_trt_prerep(self):
+        self.log.info('Start Trt PreRep')
+        self.trt_prerep_task.start()
+        return True
+
+    def stop_trt_prerep(self):
+        self.log.info('Stop Trt PreRep')
+        self.trt_prerep_task.stop()
+        return True
+
+    def start_trt_engine(self):
+        self.log.info('Start Trt Engine')
+        self.trt_engine_task.start()
+        return True
+
+    def stop_trt_engine(self):
+        self.log.info('Stop Trt Engine')
+        self.trt_engine_task.stop()
+        return True
 
     def start_gst_launch(self):
         self.log.info('Start Gst Launch')
-        if util_check_service(self.service_jetgst):
-            util_stop_service(self.service_jetgst)
-        return not util_start_service(self.service_jetgst)
+        if util_check_service(self.svc_name_jetgst):
+            util_stop_service(self.svc_name_jetgst)
+        return not util_start_service(self.svc_name_jetgst)
 
     def stop_gst_launch(self):
         self.log.info('Stop Gst Launch')
-        return not util_stop_service(self.service_jetgst) \
-                if util_check_service(self.service_jetgst) else True
+        return not util_stop_service(self.svc_name_jetgst) \
+                if util_check_service(self.svc_name_jetgst) else True
 
     def start_srs_webrtc(self):
         self.log.info('Start Srs Webrtc')
-        return not util_start_service(self.service_srsrtc, True)
+        return not util_start_service(self.svc_name_srsrtc, True)
 
     def stop_srs_webrtc(self):
         self.log.info('Stop Srs Webrtc')
-        return not util_stop_service(self.service_srsrtc) \
-                if util_check_service(self.service_srsrtc) else True
+        return not util_stop_service(self.svc_name_srsrtc) \
+                if util_check_service(self.svc_name_srsrtc) else True
 
     def start_api_handler(self):
         self.log.info('Start Api Handler')
-        return not util_start_service(self.service_repapi, True)
+        return not util_start_service(self.svc_name_repapi, True)
 
     def stop_api_handler(self):
         self.log.info('Stop Api Handler')
-        return not util_stop_service(self.service_repapi) \
-                if util_check_service(self.service_repapi) else True
+        return not util_stop_service(self.svc_name_repapi) \
+                if util_check_service(self.svc_name_repapi) else True
 
     def run(self, argv=None):
         try:
@@ -169,6 +241,9 @@ class JetRepApp(Application):
             self.setup()
             self.start()
             self.rpc_task.join()
+            self.trt_engine_task.join()
+            self.trt_prerep_task.join()
+            self.trt_postrep_task.join()
         except Exception:
             self.log.error(traceback.format_exc(limit=6))
             os._exit(os.EX_OK)

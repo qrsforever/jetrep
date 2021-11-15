@@ -7,6 +7,7 @@
 # @version 1.0
 # @date 2021-11-11 20:31
 
+from multiprocessing import Queue
 from jetrep.core.message import MessageHandler
 from jetrep.core.message import MessageType
 from jetrep.core.message import LogType
@@ -18,6 +19,9 @@ class NullLogger(object):
 
 
 class LogHandler(MessageHandler):
+    mq = Queue()
+    handlers = {}
+
     def __init__(self, app):
         super(LogHandler, self).__init__(app, keys=[MessageType.LOG])
         if app is not None:
@@ -26,17 +30,17 @@ class LogHandler(MessageHandler):
             self.logger = NullLogger()
 
     def handle_message(self, what, arg1, arg2, obj):
-        if what == MessageType.LOG:
-            if arg1 == LogType.DEBUG:
-                self.logger.debug(f'{obj}')
-            elif arg1 == LogType.INFO:
-                self.logger.info(f'{obj}')
-            elif arg1 == LogType.WARN:
-                self.logger.warn(f'{obj}')
-            elif arg1 == LogType.ERROR:
-                self.logger.error(f'{obj}')
-            return True
-        return False
+        if what != MessageType.LOG:
+            return False
+        if arg1 == LogType.DEBUG:
+            self.logger.debug(f'{obj}')
+        elif arg1 == LogType.INFO:
+            self.logger.info(f'{obj}')
+        elif arg1 == LogType.WARN:
+            self.logger.warn(f'{obj}')
+        elif arg1 == LogType.ERROR:
+            self.logger.error(f'{obj}')
+        return True
 
     @staticmethod
     def instance(logger):

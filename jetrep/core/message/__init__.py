@@ -9,7 +9,7 @@ from .type import (
     StateType
 )
 from .base import MessageHandler
-from .looper import MainHandlerThread
+from .looper import MainHandlerThread, LogHandlerThread
 
 __all__ = [
     "MessageType",
@@ -19,4 +19,5 @@ __all__ = [
     "StateType",
     "MessageHandler",
     "MainHandlerThread",
+    "LogHandlerThread",
 ]

@@ -73,21 +73,23 @@ if __name__ == "__main__":
             app.logger.warning(f'Call send_message timeout!\n')
 
     try:
-        jetrep = None
+        remote = None
         if util_check_port(args.rpc_port, args.rpc_host, trycnt=3):
-            jetrep = zerorpc.Client(
+            remote = zerorpc.Client(
                 connect_to='tcp://{}:{}'.format(args.rpc_host, args.rpc_port),
                 timeout=10,
                 passive_heartbeat=True)
-            app.send_message = lambda *args, **kwargs: send_message(jetrep, *args, **kwargs)
-            app.send_message(MessageType.STATE, ServiceType.API, StateType.STARTING, 'repapi')
+            # app.send_message = lambda *args, **kwargs: send_message(remote, *args, **kwargs)
+            # app.send_message(MessageType.STATE, ServiceType.API, StateType.STARTING, 'repapi')
+            remote.send_message(MessageType.STATE, ServiceType.API, StateType.STARTING, 'repapi')
+            app.remote = remote
 
             server = pywsgi.WSGIServer((args.host, args.port), app)
 
             def shutdown(num, frame):
-                app.send_message(MessageType.STATE, ServiceType.API, StateType.STOPPING, 'repapi')
+                remote.send_message(MessageType.STATE, ServiceType.API, StateType.STOPPING, 'repapi')
                 server.stop()
-                jetrep.close()
+                remote.close()
                 sys.stderr.write('End!!!\n')
                 sys.stderr.flush()
                 exit(0)
@@ -101,5 +103,5 @@ if __name__ == "__main__":
     except Exception as err:
         sys.stderr.write(f'{err}!\n')
     finally:
-        if jetrep and server.started:
+        if remote and server.started:
             shutdown()

@@ -24,22 +24,26 @@ class StateHandler(MessageHandler):
             return True
         if state == StateType.STARTED:
             return self.app.start_gst_launch()
-        if state == StateType.STOPPED:
-            return self.app.stop_api_handler()
         return False
 
     def on_service_gst(self, state, obj):
         if state == StateType.STARTED:
-            return True
-        if state == StateType.STOPPED:
-            return self.app.stop_srs_webrtc()
+            return self.app.start_trt_engine()
         return False
 
     def on_service_api(self, state, obj):
         if state == StateType.STARTING:
             return self.app.start_srs_webrtc()
-        if state == StateType.STOPPING:
-            return True
+        return False
+
+    def on_task_engine(self, state, obj):
+        if state == StateType.STARTED:
+            return self.app.start_trt_prerep()
+        return False
+
+    def on_task_prerep(self, state, obj):
+        if state == StateType.STARTED:
+            return self.app.start_trt_postrep()
         return False
 
     def handle_message(self, what, arg1, arg2, obj):
@@ -52,6 +56,10 @@ class StateHandler(MessageHandler):
             return self.on_service_gst(arg2, obj)
         if arg1 == ServiceType.API:
             return self.on_service_api(arg2, obj)
+        if arg1 == ServiceType.RT_INFER_ENGINE:
+            return self.on_task_engine(arg2, obj)
+        if arg1 == ServiceType.RT_INFER_PREREP:
+            return self.on_task_prerep(arg2, obj)
         return False
 
     @staticmethod

@@ -15,7 +15,7 @@ from .type import MessageType
 
 class MainHandlerThread(threading.Thread):
     def __init__(self):
-        super(MainHandlerThread, self).__init__()
+        super(MainHandlerThread, self).__init__(name='mainthreadhandler')
 
     def run(self):
         while True:
@@ -27,6 +27,29 @@ class MainHandlerThread(threading.Thread):
                 if msg.what not in MH.handlers:
                     continue
                 for handler in MH.handlers[msg.what]:
+                    if handler.dispatch_message(msg):
+                        break
+            except queue.Empty:
+                pass
+
+
+from jetrep.core.handlers.log import LogHandler as LH
+
+
+class LogHandlerThread(threading.Thread):
+    def __init__(self):
+        super(LogHandlerThread, self).__init__(name='logthreadhandler')
+
+    def run(self):
+        while True:
+            try:
+                msg = LH.mq.get(timeout=3)
+                # print(msg)
+                if msg.what == MessageType.QUIT:
+                    break
+                if msg.what not in LH.handlers:
+                    continue
+                for handler in LH.handlers[msg.what]:
                     if handler.dispatch_message(msg):
                         break
             except queue.Empty:
