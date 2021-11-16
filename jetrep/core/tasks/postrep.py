@@ -7,10 +7,10 @@
 # @version 1.0
 # @date 2021-11-15 17:27
 
-import cv2, os, time
+import cv2, os
 import numpy as np
 import queue
-import threading
+# import threading
 from jetrep.utils.ai import (
     sigmoid,
     softmax
@@ -20,35 +20,17 @@ from jetrep.core.message import (
     ServiceType,
     StateType,
 )
+from .base import ServiceBase
 
 
-class PostProcessRep(threading.Thread):
-    """
-    Postprocess inputs before repnet rt
-    """
-    def __init__(self, app, mq_in, mq_out):
-        super(PostProcessRep, self).__init__(name=app.tsk_name_postrep)
-        self.app = app
-        self.mq_in, self.mq_out = mq_in, mq_out
-        self.exit = False
+class TRTPostrepProcess(ServiceBase):
+    name = 'InferPostrep'
 
-    def start(self):
-        self.app.native.send_message(MessageType.STATE, ServiceType.RT_INFER_POSTREP, StateType.STARTING)
-        super().start()
+    def __init__(self, **kwargs):
+        super(TRTPostrepProcess, self).__init__(**kwargs)
 
-    def stop(self):
-        self.app.native.send_message(MessageType.STATE, ServiceType.RT_INFER_POSTREP, StateType.STOPPING)
-        self.exit = True
-        for i in range(5):
-            self.mq_out.put((-1, None))
-            if not self.is_alive():
-                break
-            time.sleep(1)
-
-    def run(self):
-        ctx, native = self.app.psctx, self.app.native
-        native.logi(f"Start postrep_process_worker[{ctx}]")
-
+    def task(self, remote, exit, mq_timeout):
+        width, height, rate = remote.get_props_frame()
         gst_str = ' ! '.join([
             'appsrc',
             'videoconvert',
@@ -61,19 +43,17 @@ class PostProcessRep(threading.Thread):
             'flvmux streamable=true name=mux',
             'rtmpsink max-lateness=500000 location=rtmp://0.0.0.0:1935/live/2'
         ])
-        writer = cv2.VideoWriter(gst_str, 0, ctx.frame_rate, ctx.frame_size)
+        writer = cv2.VideoWriter(gst_str, 0, rate, (width, height))
 
-        native.send_message(MessageType.STATE, ServiceType.RT_INFER_POSTREP, StateType.STARTED)
+        remote.send_message(MessageType.STATE, ServiceType.RT_INFER_POSTREP, StateType.STARTED)
         sumcount = 0
-        while not self.exit:
+        while not exit.is_set():
             try:
-                token, bucket = self.mq_out.get(timeout=3)
-                if token < 0:
-                    break
+                bucket = self.mQout.get(timeout=mq_timeout)
             except queue.Empty:
                 continue
             except Exception as err:
-                native.loge(f'Err: {err}')
+                remote.loge(f'Err: {err}')
                 break
 
             within_scores, period_scores = bucket.within_scores, bucket.period_scores
@@ -88,7 +68,7 @@ class PostProcessRep(threading.Thread):
 
             per_frame_counts = within_period_binary * np.where(per_frame_periods < 3, 0.0, 1 / per_frame_periods)
 
-            native.logi(f'{bucket.raw_frames_path}: {sum(per_frame_counts)}')
+            remote.logi(f'{bucket.raw_frames_path}: {sum(per_frame_counts)}')
             frame_counts = [0] * bucket.raw_frames_count
             s = 0
             for i, t in enumerate(bucket.selected_indices):
@@ -110,5 +90,4 @@ class PostProcessRep(threading.Thread):
                 os.unlink(bucket.raw_frames_path)
             del bucket
         writer.release()
-        native.logw('PostRep process worker end!')
-        native.send_message(MessageType.STATE, ServiceType.RT_INFER_POSTREP, StateType.STOPPED)
+        remote.send_message(MessageType.STATE, ServiceType.RT_INFER_POSTREP, StateType.STOPPED)

@@ -1,12 +1,12 @@
 #!/bin/bash
 
-services=('repapi' 'srsrtc' 'jetgst')
+services=('jetrep' 'repapi' 'srsrtc' 'jetgst')
 
 N=$1
 
 if [[ x$N == x ]]
 then
-    N=10
+    N=20
 fi
 
 clear

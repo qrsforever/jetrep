@@ -5,8 +5,8 @@
 
 [Service]
     Type=simple
-    User=nano
-    Group=nano
+    User=root
+    Group=root
     UMask=0000
     WorkingDirectory=/home/nano/omega/jetson/jetrep
     Environment="PYTHONPATH=/home/nano/omega/jetson/jetrep"

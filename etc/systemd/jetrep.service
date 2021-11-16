@@ -1,0 +1,23 @@
+[Unit]
+    Description=JetRep Main Process
+    Documentation=http://jetrep.hzcsai.com
+    After=multi-user.target
+
+[Service]
+    Type=simple
+    User=root
+    Group=root
+    UMask=0000
+    WorkingDirectory=/home/nano/omega/jetson/jetrep
+    EnvironmentFile=/home/nano/omega/jetson/jetrep/etc/jetrep.env
+    Restart=always
+    RestartSec=3
+    ExecStartPre=-/bin/bash /home/nano/omega/jetson/jetrep/scripts/stop_services.sh
+    ExecStart=/usr/bin/python3 jetrep/core/main.py --debug -c etc/jetrep.json
+    TimeoutStartSec=30
+    TimeoutStopSec=30
+    StandardOutput=syslog
+    StandardError=syslog
+
+[Install]
+    WantedBy=multi-user.target

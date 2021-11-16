@@ -5,9 +5,7 @@ CUR_DIR=$(cd $(dirname ${BASH_SOURCE[0]}); pwd)
 TOP_DIR=$(dirname $CUR_DIR)
 DST_DIR=/etc/systemd/system/
 
-SERVICE=srsrtc.service
-SRS_DIR=/home/nano/srs
-RESTAPI=http://127.0.0.1:8282/apis/systemd/v1/status
+SERVICE=jetrep.service
 
 XRUN=
 if [[ 0 != $(id -u) ]]
@@ -19,7 +17,7 @@ USER=root
 
 cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
 [Unit]
-    Description=JetRep SRS Webrtc Service
+    Description=JetRep Main Process
     Documentation=http://jetrep.hzcsai.com
     After=multi-user.target
 
@@ -28,16 +26,14 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     User=$USER
     Group=$USER
     UMask=0000
-    WorkingDirectory=$SRS_DIR
+    WorkingDirectory=$TOP_DIR
+    EnvironmentFile=$TOP_DIR/etc/jetrep.env
     Restart=always
-    RestartSec=10
-    ExecStartPre=-/usr/bin/curl -d '{"name": "srsrtc", "status": "starting"}' $RESTAPI
-    ExecStart=$SRS_DIR/objs/srs -c $TOP_DIR/etc/srsrtc.conf
-    ExecStartPost=/bin/sleep 2
-    ExecStartPost=-/usr/bin/curl -d '{"name": "srsrtc", "status": "started"}' $RESTAPI
-    ExecStopPost=-/usr/bin/curl -d '{"name": "srsrtc", "status": "stopped"}' $RESTAPI
-    TimeoutStartSec=10
-    TimeoutStopSec=5
+    RestartSec=3
+    ExecStartPre=-/bin/bash $TOP_DIR/scripts/stop_services.sh
+    ExecStart=/usr/bin/python3 jetrep/core/main.py --debug -c etc/jetrep.json
+    TimeoutStartSec=30
+    TimeoutStopSec=30
     StandardOutput=syslog
     StandardError=syslog
 

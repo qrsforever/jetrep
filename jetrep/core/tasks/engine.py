@@ -7,56 +7,39 @@
 # @version 1.0
 # @date 2021-11-12 22:19
 
-import time
 import queue
 import numpy as np
-from multiprocessing import Process, Event
+from .base import ServiceBase
 from jetrep.core.message import (
     MessageType,
     ServiceType,
     StateType,
 )
 
+DEFAULT_WGT_PATH = '/home/nano/models/repnet_b1.trt'
 
-class InferProcessRT(Process):
-    def __init__(self, app, ip, port, mq_in, mq_out, weight_path='/home/nano/models/repnet_b1.trt'):
-        super(InferProcessRT, self).__init__(name=app.tsk_name_engine)
-        # self.native = app.native    # TODO cannot pickle object between process
-        self.ip, self.port = ip, port
-        self.weight_path = weight_path
-        self.mq_in, self.mq_out = mq_in, mq_out
-        self.exit = Event()
 
-    # def start(self):
-    #     self.native.send_message(MessageType.STATE, ServiceType.RT_INFER_ENGINE, StateType.STARTING)
-    #     super().start()
+class TRTEngineProcess(ServiceBase):
+    name = 'InferEngine'
 
-    def stop(self):
-        # self.native.send_message(MessageType.STATE, ServiceType.RT_INFER_ENGINE, StateType.STOPPING)
-        self.exit.set()
-        for i in range(15):
-            self.mq_in.put((-1, None))
-            if not self.exit.is_set():
-                print('1' * 60)
-                break
-            time.sleep(1)
+    def __init__(self, **kwargs):
+        self.weight_path = kwargs.pop('weight_path', DEFAULT_WGT_PATH)
+        super(TRTEngineProcess, self).__init__(**kwargs)
 
-    def run(self):
-        import sys, signal, zerorpc
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        signal.signal(signal.SIGTERM, signal.SIG_IGN)
-        remote = zerorpc.Client(
-            connect_to='tcp://{}:{}'.format(self.ip, self.port),
-            timeout=10,
-            passive_heartbeat=True)
+    def task(self, remote, exit, mq_timeout):
+        import sys
         sys.path.append('/usr/src/tensorrt/samples/python')
 
+        # import pycuda.driver as cuda
         import tensorrt as trt
         import common
 
         remote.send_message(MessageType.STATE, ServiceType.RT_INFER_ENGINE, StateType.STARTING)
         try:
             remote.logi('Create engine context.')
+            # cuda.init()
+            # device = cuda.Device(0)
+            # ctx = device.make_context()
             with open(self.weight_path, "rb") as f, \
                 trt.Runtime(trt.Logger()) as runtime, \
                 runtime.deserialize_cuda_engine(f.read()) as engine, \
@@ -65,11 +48,9 @@ class InferProcessRT(Process):
                 inputs, outputs, bindings, stream = common.allocate_buffers(engine)
 
                 remote.send_message(MessageType.STATE, ServiceType.RT_INFER_ENGINE, StateType.STARTED)
-                while not self.exit.is_set():
+                while not exit.is_set():
                     try:
-                        token, bucket = self.mq_in.get(timeout=3)
-                        if token < 0:
-                            break
+                        bucket = self.mQin.get(timeout=mq_timeout)
                     except queue.Empty:
                         continue
                     except Exception as err:
@@ -86,11 +67,14 @@ class InferProcessRT(Process):
                     bucket.within_scores = trt_outputs[0].copy()
                     bucket.period_scores = trt_outputs[1].copy()
 
-                    self.mq_out.put((token, bucket))
+                    self.mQout.put(bucket)
+
+                del context, inputs, outputs, bindings, stream
+            # ctx.pop()
+            # del ctx
         except Exception as err:
             remote.loge(err)
-        if remote:
-            remote.send_message(MessageType.STATE, ServiceType.RT_INFER_ENGINE, StateType.STOPPED)
-            remote.close()
-        self.exit.clear()
-        print("end "*30)
+        remote.send_message(MessageType.STATE, ServiceType.RT_INFER_ENGINE, StateType.STOPPED)
+        # TODO cuda engine quit problem
+        import os, signal
+        os.kill(os.getpid(), signal.SIGKILL)

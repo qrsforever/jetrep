@@ -29,16 +29,16 @@ from jetrep.core.handlers import (
 )
 from jetrep.core.tasks import (
     ServiceRPC,
-    InferProcessRT,
-    PreProcessRep,
-    PostProcessRep,
+    TRTEngineProcess,
+    TRTPrerepProcess,
+    TRTPostrepProcess,
 )
 from jetrep.utils.shell import (
     util_check_service,
     util_start_service,
     util_stop_service
 )
-from jetrep.core import PSContext
+from jetrep.core.context import PSContext
 
 
 multiprocessing.set_start_method('forkserver', force=True)
@@ -52,6 +52,14 @@ class NativeHandler(MessageHandler):
 
     def handle_message(self, what, arg1, arg2, obj):
         pass
+
+    def get_props_frame(self): # width, height, rate
+        return self.app.psctx.frame_size[0], \
+                self.app.psctx.frame_size[1], \
+                self.app.psctx.frame_rate
+
+    def get_bucket(self):
+        return self.app.psctx.make_bucket()
 
     def logd(self, s):
         self.log_handler.send_message(MessageType.LOG, LogType.DEBUG, obj=f'{s}')
@@ -76,9 +84,9 @@ class JetRepApp(Application):
     svc_name_repapi = Unicode('repapi', read_only=True)
     svc_name_jetgst = Unicode('jetgst', read_only=True)
     svc_name_srsrtc = Unicode('srsrtc', read_only=True)
-    tsk_name_engine = Unicode('engine', read_only=True)
-    tsk_name_prerep = Unicode('prerep', read_only=True)
-    tsk_name_postrep = Unicode('postrep', read_only=True)
+    tsk_name_engine = Unicode(TRTEngineProcess.name, read_only=True)
+    tsk_name_prerep = Unicode(TRTPrerepProcess.name, read_only=True)
+    tsk_name_postrep = Unicode(TRTPostrepProcess.name, read_only=True)
 
     config_file = Unicode('', help='Load this config file').tag(config=True)
     log_file = Unicode('/tmp/jetrep.log', help='Write log to file ').tag(config=True)
@@ -86,7 +94,7 @@ class JetRepApp(Application):
     rpc_ip = Unicode('127.0.0.1', help='Set zerorpc host').tag(config=True)
     rpc_port = Int(8181, help='Set zerorpc port').tag(config=True)
 
-    classes = List([PSContext])
+    classes = [PSContext]
 
     aliases = Dict(
         dict(
@@ -129,7 +137,8 @@ class JetRepApp(Application):
         self.parse_command_line(argv)
         if self.config_file:
             self.load_config_file(self.config_file)
-        print(self.print_options())
+        print(self.config)
+        print(self.print_help(classes=True))
 
     def setup(self):
         self.log_looper = LogHandlerThread()
@@ -143,11 +152,12 @@ class JetRepApp(Application):
         self.log.info('Setup Rpc server')
         self.rpc_task = ServiceRPC(self, self.rpc_ip, self.rpc_port)
 
-        self.log.info('Setup Trt Engine')
-        self.mq_in, self.mq_out, self.psctx = Queue(), Queue(), PSContext()
-        self.trt_engine_task = InferProcessRT(self, self.rpc_ip, self.rpc_port, self.mq_in, self.mq_out)
-        self.trt_prerep_task = PreProcessRep(self, self.mq_in, self.mq_out)
-        self.trt_postrep_task = PostProcessRep(self, self.mq_in, self.mq_out)
+        self.log.info('Setup Trt Tasks')
+        self.mq_in, self.mq_out, self.psctx = Queue(), Queue(), PSContext(parent=self)
+        self.tasks = {}
+        for cls in (TRTEngineProcess, TRTPrerepProcess, TRTPostrepProcess):
+            self.log.info(f'Setup {cls.name}')
+            self.tasks[cls.name] = cls(ip=self.rpc_ip, port=self.rpc_port, mq_in=self.mq_in, mq_out=self.mq_out)
 
     def start(self):
         self.log.info('Starting...')
@@ -168,44 +178,42 @@ class JetRepApp(Application):
         self.rpc_task.stop()
 
     def status(self):
-        status = {}
-        status[self.svc_name_jetgst] = util_check_service(self.svc_name_jetgst)
-        status[self.svc_name_srsrtc] = util_check_service(self.svc_name_srsrtc)
-        status[self.svc_name_repapi] = util_check_service(self.svc_name_repapi)
-
-        status[self.tsk_name_engine] = self.trt_engine_task.is_alive() if self.trt_engine_task else False
-        status[self.tsk_name_prerep] = self.trt_prerep_task.is_alive() if self.trt_prerep_task else False
-        status[self.tsk_name_postrep] = self.trt_postrep_task.is_alive() if self.trt_postrep_task else False
-        return status
+        result = {}
+        result[self.svc_name_jetgst] = util_check_service(self.svc_name_jetgst)
+        result[self.svc_name_srsrtc] = util_check_service(self.svc_name_srsrtc)
+        result[self.svc_name_repapi] = util_check_service(self.svc_name_repapi)
+        for name, tsk in self.tasks.items():
+            result[name] = tsk.is_alive()
+        return result
 
     def start_trt_postrep(self):
         self.log.info('Start Trt PostRep')
-        self.trt_postrep_task.start()
+        self.tasks[self.tsk_name_postrep].start()
         return True
 
     def stop_trt_postrep(self):
         self.log.info('Stop Trt PostRep')
-        self.trt_postrep_task.stop()
+        self.tasks[self.tsk_name_postrep].stop()
         return True
 
     def start_trt_prerep(self):
         self.log.info('Start Trt PreRep')
-        self.trt_prerep_task.start()
+        self.tasks[self.tsk_name_prerep].start()
         return True
 
     def stop_trt_prerep(self):
         self.log.info('Stop Trt PreRep')
-        self.trt_prerep_task.stop()
+        self.tasks[self.tsk_name_prerep].stop()
         return True
 
     def start_trt_engine(self):
         self.log.info('Start Trt Engine')
-        self.trt_engine_task.start()
+        self.tasks[self.tsk_name_engine].start()
         return True
 
     def stop_trt_engine(self):
         self.log.info('Stop Trt Engine')
-        self.trt_engine_task.stop()
+        self.tasks[self.tsk_name_engine].stop()
         return True
 
     def start_gst_launch(self):
@@ -243,12 +251,11 @@ class JetRepApp(Application):
             self.setup()
             self.start()
             self.rpc_task.join()
-            self.trt_engine_task.join()
-            self.trt_prerep_task.join()
-            self.trt_postrep_task.join()
         except Exception:
+            print('!'*70)
             self.log.error(traceback.format_exc(limit=6))
             os._exit(os.EX_OK)
+        self.log.warning('JetRepApp End!!!!')
 
 
 def signal_handler(sig, frame):

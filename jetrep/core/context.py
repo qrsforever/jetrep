@@ -7,12 +7,13 @@
 # @version 1.0
 # @date 2021-11-15 15:40
 
-import os
+import os, sys
 import time
 import jsonschema
 import traitlets
+import os.path as osp
 from traitlets.config.configurable import Configurable
-from traitlets import Bool, Int, Float, Unicode, Tuple, List, Dict, Enum # noqa
+from traitlets import Int, Float, Unicode, Tuple, List, Dict
 
 
 class PSContext(Configurable):
@@ -22,7 +23,7 @@ class PSContext(Configurable):
     black_box = List(Float(min=0., max=1.), [0.0, 0.0, 0.0, 0.0], minlen=4, maxlen=4).tag(config=True)
     area_rate = Float(default_value=0.002, min=0.0, max=0.05).tag(config=True)
     strides = List(trait=Int(), default_value=[4], minlen=1, maxlen=3).tag(config=True)
-    snip_root = Unicode('/tmp').tag(config=True)
+    video_clips_path = Unicode('/tmp').tag(config=True)
 
     # synth_video_rtmp = Dict(traits={'server': Unicode(), 'port': Int(1935), 'stream': Unicode()})
     synth_video_schema = {
@@ -60,15 +61,33 @@ class PSContext(Configurable):
         self._max_raw_frames = self._stride * self.K
         self._area_thresh = 0
 
-    class FBucket(object):
+    class FBucket(dict):
+        __getattr__ = dict.get
+        __setattr__ = dict.__setitem__
+        __delattr__ = dict.__delitem__
+
         tmp_dir = '/tmp'
 
-        def __init__(self):
+        def __init__(self, *args, **kwargs):
+            super(PSContext.FBucket, self).__init__(*args, **kwargs)
             self.token = int(time.time() * 1000)
             self.raw_frames_count = 0
             self.raw_frames_path = f'{self.tmp_dir}/{self.token}.mp4'
             self.inputs = []
             self.selected_indices = []
+            for arg in args:
+                if isinstance(arg, dict):
+                    for k, v in arg.items():
+                        self[k] = v
+            if kwargs:
+                for k, v in kwargs.items():
+                    self[k] = v
+
+        def __getstate__(self):
+            return self.__dict__
+
+        def __setstate__(self, d):
+            self.__dict__.update(d)
 
         def __str__(self):
             return 'token: {}, raw_frames_count: {}, raw_frames_path: {}, selected_indices: {}'.format(
@@ -133,8 +152,8 @@ class PSContext(Configurable):
         self._stride = change['new'][0]
         self._max_raw_frames = self._stride * self.K
 
-    @traitlets.observe('snip_root')
-    def _on_snip_root(self, change):
+    @traitlets.observe('video_clips_path')
+    def _on_video_clips_path(self, change):
         if os.path.isdir(change['new']):
             self.FBucket.tmp_dir = change['new']
 
@@ -164,3 +183,34 @@ class PSContext(Configurable):
         str_ = f'_area_thresh: {self._area_thresh} _focus_box: {self._focus_box} _black_box: {self._black_box} '
         str_ += f'_stride: {self._stride} synth_video: {self.synth_video}'
         return str_
+
+
+class RemoteWraper(object):
+    def __init__(self, remote):
+        self.impl = remote
+
+    def __getattr__(self, method):
+        return lambda *args, **kwargs: self.impl(method, *args, **kwargs)
+
+    def close(self):
+        return self.impl.close()
+
+    def logd(self, s):
+        filename = osp.basename(sys._getframe().f_back.f_code.co_filename)
+        lineno = sys._getframe().f_back.f_lineno
+        return self.impl.logd(f'{filename}:{lineno} --> {s}')
+
+    def logi(self, s):
+        filename = osp.basename(sys._getframe().f_back.f_code.co_filename)
+        lineno = sys._getframe().f_back.f_lineno
+        return self.impl.logi(f'{filename}:{lineno} --> {s}')
+
+    def logw(self, s):
+        filename = osp.basename(sys._getframe().f_back.f_code.co_filename)
+        lineno = sys._getframe().f_back.f_lineno
+        return self.impl.logw(f'{filename}:{lineno} --> {s}')
+
+    def loge(self, s):
+        filename = osp.basename(sys._getframe().f_back.f_code.co_filename)
+        lineno = sys._getframe().f_back.f_lineno
+        return self.impl.loge(f'{filename}:{lineno} --> {s}')

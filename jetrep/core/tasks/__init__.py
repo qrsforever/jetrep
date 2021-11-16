@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 
 from .rpc import ServiceRPC
-from .engine import InferProcessRT
-from .prerep import PreProcessRep
-from .postrep import PostProcessRep
+from .engine import TRTEngineProcess
+from .prerep import TRTPrerepProcess
+from .postrep import TRTPostrepProcess
 
 __all__ = [
     'ServiceRPC',
-    'InferProcessRT',
-    'PreProcessRep',
-    'PostProcessRep',
+    'TRTEngineProcess',
+    'TRTPrerepProcess',
+    'TRTPostrepProcess',
 ]

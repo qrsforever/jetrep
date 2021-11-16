@@ -14,6 +14,8 @@ then
     XRUN=sudo
 fi
 
+USER=root
+
 cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
 [Unit]
     Description=Gst pipeline start launch
