@@ -7,7 +7,11 @@
 # @version 1.0
 # @date 2021-11-16 11:29
 
-from jetrep.core import RemoteWraper
+from jetrep.core import RemoteAgent
+from jetrep.core.message import (
+    MessageType,
+    StateType,
+)
 from multiprocessing import Process, Event, Lock
 
 
@@ -34,14 +38,14 @@ class DumpDict(dict):
 
 class ServiceBase(Process):
 
-    def __init__(self, **kwargs):
+    def __init__(self, evt_exit, **kwargs):
+        self.exit = evt_exit
         self.mq_timeout = kwargs.pop('mq_timeout', 3)
         for key, val in kwargs.items():
             setattr(self, key, val)
         super(ServiceBase, self).__init__(name=self.name)
 
         self.exited = Event()
-        self.exit = Event()
         self.lock = Lock()
         self.lock.acquire()
         super().start()
@@ -50,13 +54,18 @@ class ServiceBase(Process):
     def clsname(self):
         return self.__class__.__name__
 
+    def type(self):
+        raise RuntimeError('Not imple subclass method')
+
     def start(self):
         self.lock.release()
 
-    def stop(self):
-        self.lock.release()
-        self.exit.set()
+    def stop(self, handler):
+        # self.lock.release() # TODO call stop before start
+        handler.send_message(MessageType.STATE, self.type(), StateType.STOPPING, self.clsname)
         self.exited.wait(timeout=2*self.mq_timeout)
+        if not self.exited.is_set():
+            handler.send_message(MessageType.STATE, self.type(), StateType.STOPPTIMEOUT, self.clsname)
         self.join(0.5)
 
     def run(self):
@@ -85,7 +94,7 @@ class ServiceBase(Process):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
 
-        return RemoteWraper(
+        return RemoteAgent(
                 zerorpc.Client(
                     connect_to='tcp://{}:{}'.format(self.ip, self.port),
                     timeout=10,

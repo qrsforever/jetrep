@@ -9,6 +9,7 @@
 
 import abc
 from multiprocessing import Queue
+from .type import pretty_format
 
 
 class Message(object):
@@ -20,7 +21,8 @@ class Message(object):
         self.callback = callback # TODO
 
     def __str__(self):
-        return f'what[{self.what}], arg1[{self.arg1}], arg2[{self.arg2}], obj[{type(self.obj)}]'
+        obj = self.obj[:32] if isinstance(self.obj, str) else self.obj.__class__.__name__
+        return f'msg: ({pretty_format(self.what, self.arg1, self.arg2)}, {obj})'
 
     @staticmethod
     def obtain(what, arg1, arg2, obj, cb=None):
@@ -43,13 +45,14 @@ class MessageHandler(metaclass=abc.ABCMeta):
     def handle_message(self, what, arg1, arg2, obj):
         pass
 
-    def send_message(self, what, arg1=-1, arg2=-1, obj=None):
-        # self.log.info(f'{what}, {arg1}, {arg2} {obj}')
-        msg = Message.obtain(what, arg1, arg2, obj)
-        return self.mq.put(msg)
+    def send_message(self, what, arg1=-1, arg2=-1, obj=None, cb=None):
+        msg = Message.obtain(what, arg1, arg2, obj, cb)
+        self.mq.put(msg)
+        return True
 
     def dispatch_message(self, msg):
-        # self.log.info(msg)
+        if msg.what != 1: # LOG
+            self.log.info(msg)
         if msg.callback:
             return msg.callback.handle_message(msg.what, msg.arg1, msg.arg2, msg.obj)
         return self.handle_message(msg.what, msg.arg1, msg.arg2, msg.obj)

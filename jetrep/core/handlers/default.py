@@ -13,6 +13,7 @@ from jetrep.core.message import MessageHandler
 from jetrep.core.message import (
     MessageType,
     CommandType,
+    ServiceType,
 )
 
 
@@ -20,19 +21,43 @@ class DefaultHandler(MessageHandler):
     def __init__(self, app):
         super(DefaultHandler, self).__init__(app, keys=[MessageType.CTRL, MessageType.QUIT])
 
+    def on_ctrl_start(self, arg2, obj):
+        if arg2 == ServiceType.API:
+            return self.app.start_api_handler()
+        if arg2 == ServiceType.SRS:
+            return self.app.start_srs_webrtc()
+        if arg2 == ServiceType.GST:
+            return self.app.start_gst_launch()
+        if arg2 == ServiceType.RT_INFER_ENGINE:
+            return self.app.start_trt_engine()
+        if arg2 == ServiceType.RT_INFER_PREREP:
+            return self.app.start_trt_prerep()
+        if arg2 == ServiceType.RT_INFER_POSTREP:
+            return self.app.start_trt_postrep()
+        return False
+
+    def on_ctrl_stop(self, arg2, obj):
+        if arg2 == ServiceType.GST:
+            self.app.stop_gst_launch()
+            self.app.stop_srs_webrtc() 
+            self.app.stop_api_handler()
+            return True
+        if arg2 == ServiceType.RT_INFER_ENGINE:
+            return self.app.stop_trt_engine()
+        if arg2 == ServiceType.RT_INFER_PREREP:
+            return self.app.stop_trt_prerep()
+        if arg2 == ServiceType.RT_INFER_POSTREP:
+            return self.app.stop_trt_postrep()
+        return False
+
     def handle_message(self, what, arg1, arg2, obj):
-        self.log.debug(f'{what} {arg1} {arg2} {obj}')
         if what == MessageType.CTRL:
             if arg1 == CommandType.APP_START:
-                return self.app.start_api_handler()
+                return self.on_ctrl_start(arg2, obj)
             if arg1 == CommandType.APP_STOP:
-                self.app.stop_trt_postrep()
-                self.app.stop_trt_prerep()
-                self.app.stop_trt_engine()
-                self.app.stop_gst_launch()
-                self.app.stop_srs_webrtc()
-                self.app.stop_api_handler()
-                return True
+                return self.on_ctrl_stop(arg2, obj)
+            if arg1 == CommandType.APP_RESTART:
+                pass
         return False
 
     @staticmethod

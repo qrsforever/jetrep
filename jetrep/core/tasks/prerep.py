@@ -8,7 +8,6 @@
 # @date 2021-11-15 15:27
 
 import cv2
-# import threading
 from jetrep.core.message import (
     MessageType,
     ServiceType,
@@ -22,9 +21,12 @@ DEFAULT_SHM_PATH = '/tmp/gst_repnet.shm'
 class TRTPrerepProcess(ServiceBase):
     name = 'InferPrerep'
 
-    def __init__(self, **kwargs):
+    def __init__(self, evt_exit, **kwargs):
         self.shm_path = kwargs.pop('shm_path', DEFAULT_SHM_PATH)
-        super(TRTPrerepProcess, self).__init__(**kwargs)
+        super(TRTPrerepProcess, self).__init__(evt_exit, **kwargs)
+
+    def type(self):
+        return ServiceType.RT_INFER_PREREP
 
     def task(self, remote, exit, mq_timeout):
         width, height, rate = remote.get_props_frame()

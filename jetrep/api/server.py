@@ -15,7 +15,12 @@ from flask import Flask
 from flask_cors import CORS
 from gevent import pywsgi
 from gevent import signal
-from jetrep.api.routers import srs, systemd
+from jetrep.api.routers import (
+    api_srs,
+    api_svc,
+    api_sys,
+    api_rep
+)
 from jetrep.utils.net import util_check_port
 from jetrep.core.message import (
     MessageType,
@@ -27,8 +32,10 @@ app = Flask('JetRep::Apiserver')
 app.debug = True
 CORS(app, supports_credentials=True)
 
-app.register_blueprint(systemd, url_prefix="/apis/systemd/v1")
-app.register_blueprint(srs, url_prefix="/apis/srs/v1")
+app.register_blueprint(api_svc, url_prefix="/apis/svc/v1")
+app.register_blueprint(api_srs, url_prefix="/apis/srs/v1")
+app.register_blueprint(api_sys, url_prefix="/apis/sys/v1")
+app.register_blueprint(api_rep, url_prefix="/apis/rep/v1")
 
 
 @app.route('/')

@@ -26,8 +26,11 @@ from .base import ServiceBase
 class TRTPostrepProcess(ServiceBase):
     name = 'InferPostrep'
 
-    def __init__(self, **kwargs):
-        super(TRTPostrepProcess, self).__init__(**kwargs)
+    def __init__(self, evt_exit, **kwargs):
+        super(TRTPostrepProcess, self).__init__(evt_exit, **kwargs)
+
+    def type(self):
+        return ServiceType.RT_INFER_POSTREP
 
     def task(self, remote, exit, mq_timeout):
         width, height, rate = remote.get_props_frame()

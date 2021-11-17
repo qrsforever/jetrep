@@ -7,7 +7,7 @@ DST_DIR=/etc/systemd/system/
 
 SERVICE=srsrtc.service
 SRS_DIR=/home/nano/srs
-RESTAPI=http://127.0.0.1:8282/apis/systemd/v1/status
+RESTAPI=http://127.0.0.1:8282/apis/svc/v1/status
 
 XRUN=
 if [[ 0 != $(id -u) ]]
@@ -47,9 +47,12 @@ EOF
 
 $XRUN cp $TOP_DIR/etc/systemd/$SERVICE $DST_DIR
 $XRUN systemctl daemon-reload
-# $XRUN systemctl enable $SERVICE
-$XRUN systemctl restart $SERVICE
-$XRUN systemctl status $SERVICE
+if [[ x$1 == x1 ]]
+then
+    # $XRUN systemctl enable $SERVICE
+    $XRUN systemctl restart $SERVICE
+    $XRUN systemctl status $SERVICE
+fi
 journalctl -u $SERVICE --no-pager -n 10
 echo "-------------------------------"
 echo ""

@@ -24,6 +24,7 @@ class CommandType(IntEnum):
     NOP = 1
     APP_START = 2
     APP_STOP = 3
+    APP_RESTART = 4
 
 
 @unique
@@ -44,6 +45,8 @@ class ServiceType(IntEnum):
     RT_INFER_PREREP = 5
     RT_INFER_POSTREP = 6
 
+    ALL = 99
+
 
 @unique
 class StateType(IntEnum):
@@ -52,7 +55,30 @@ class StateType(IntEnum):
     STARTED = 3
     STOPPING = 4
     STOPPED = 5
+    STOPPTIMEOUT = 6
 
+
+@unique
+class EmptyType(IntEnum):
+    NOP = 1
+
+
+def pretty_format(what, arg1, arg2):
+    if arg2 < 0:
+        arg2 = EmptyType(1)
+    if not isinstance(what, IntEnum):
+        if what == MessageType.LOG:
+            arg1 = LogType(arg1)
+        elif what == MessageType.CTRL:
+            arg1 = CommandType(arg1)
+        elif what == MessageType.STATE:
+            arg1 = ServiceType(arg1)
+            arg2 = StateType(arg2)
+        else:
+            return '%d, %d, %d' % (what, arg1, arg2)
+        what = MessageType(what)
+    return '%s, %s, %s' % (what, arg1, arg2)
+        
 
 if __name__ == "__main__":
     print(MessageType.LOG, type(MessageType.LOG))

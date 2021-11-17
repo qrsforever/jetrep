@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-# @file systemd.py
+# @file svc.py
 # @brief
 # @author QRS
 # @version 1.0
@@ -14,10 +14,9 @@ from jetrep.core.message import (
     MessageType,
     StateType,
     ServiceType,
-    LogType
 )
 
-systemd = Blueprint("systemd", __name__)
+api_svc = Blueprint("svc", __name__)
 
 OK = Response(status=200, headers={})
 ERR = Response(status=500, headers={})
@@ -36,7 +35,7 @@ STA_STR2INT = {
 }
 
 
-@systemd.route('/status', methods=['POST'])
+@api_svc.route('/status', methods=['POST'])
 def _systemd_status():
     reqjson = json.loads(request.get_data().decode())
     app.logger.info(reqjson)

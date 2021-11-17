@@ -1,6 +1,6 @@
 #!/bin/bash
 
-services=('jetrep' 'repapi' 'srsrtc' 'jetgst')
+services=('repapi' 'srsrtc' 'jetgst' 'jetrep')
 
 N=$1
 

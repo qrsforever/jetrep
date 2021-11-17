@@ -43,9 +43,12 @@ EOF
 
 $XRUN cp $TOP_DIR/etc/systemd/$SERVICE $DST_DIR
 $XRUN systemctl daemon-reload
-# $XRUN systemctl enable $SERVICE
-$XRUN systemctl restart $SERVICE
-$XRUN systemctl status $SERVICE
+if [[ x$1 == x1 ]]
+then
+    # $XRUN systemctl enable $SERVICE
+    $XRUN systemctl restart $SERVICE
+    $XRUN systemctl status $SERVICE
+fi
 journalctl -u $SERVICE --no-pager -n 10
 echo "-------------------------------"
 echo ""

@@ -11,7 +11,7 @@ import sys, os, signal, traceback # noqa
 import logging, time
 import traitlets
 import multiprocessing
-from multiprocessing import Queue
+from multiprocessing import Event, Queue
 from logging.handlers import RotatingFileHandler
 from traitlets.config.application import Application
 from traitlets import Bool, Int, Unicode, List, Dict, Enum # noqa
@@ -20,6 +20,7 @@ from jetrep.core.message import MainHandlerThread, LogHandlerThread
 from jetrep.core.message import (
     MessageType,
     CommandType,
+    ServiceType,
     LogType,
 )
 from jetrep.core.handlers import (
@@ -110,13 +111,20 @@ class JetRepApp(Application):
         )
     )
 
+    @traitlets.observe('log_datefmt', 'log_format')
+    @traitlets.observe_compat
+    def _log_format_changed(self, change):
+        _log_formatter = self._log_formatter_cls(fmt=self.log_format, datefmt=self.log_datefmt)
+        for handler in self.log.handlers:
+            handler.setFormatter(_log_formatter)
+
     @traitlets.default('log')
     def _log_default(self):
         log = logging.getLogger(self.__class__.__name__)
         log.setLevel(self.log_level)
 
         # def thread_id_filter(record):
-        #     record.thread_id = threading.get_native_id()
+        #     record.thread_id = threading.get_native_id() # >= py3.8
         #     return record
 
         formatter = self._log_formatter_cls(fmt=self.log_format, datefmt=self.log_datefmt)
@@ -124,10 +132,10 @@ class JetRepApp(Application):
         console.setFormatter(formatter)
         # console.addFilter(thread_id_filter)
 
+        formatter = self._log_formatter_cls(fmt=self.log_format, datefmt=self.log_datefmt)
         filelog = RotatingFileHandler(
-                self.log_file, mode='a', maxBytes=5*1024*1024, backupCount=2, encoding=None, delay=0)
+                self.log_file, mode='a', maxBytes=5*1024*1024, backupCount=5, encoding=None, delay=0)
         filelog.setFormatter(formatter)
-        # filelog.addFilter(thread_id_filter)
 
         log.addHandler(console)
         log.addHandler(filelog)
@@ -153,22 +161,23 @@ class JetRepApp(Application):
         self.rpc_task = ServiceRPC(self, self.rpc_ip, self.rpc_port)
 
         self.log.info('Setup Trt Tasks')
-        self.mq_in, self.mq_out, self.psctx = Queue(), Queue(), PSContext(parent=self)
+        self.exit, self.mq_in, self.mq_out, self.psctx = Event(), Queue(), Queue(), PSContext(parent=self)
         self.tasks = {}
         for cls in (TRTEngineProcess, TRTPrerepProcess, TRTPostrepProcess):
             self.log.info(f'Setup {cls.name}')
-            self.tasks[cls.name] = cls(ip=self.rpc_ip, port=self.rpc_port, mq_in=self.mq_in, mq_out=self.mq_out)
+            self.tasks[cls.name] = cls(self.exit, ip=self.rpc_ip, port=self.rpc_port, mq_in=self.mq_in, mq_out=self.mq_out)
 
     def start(self):
         self.log.info('Starting...')
         self.log_looper.start()
         self.main_looper.start()
         self.rpc_task.start()
-        self.native.send_message(MessageType.CTRL, CommandType.APP_START)
+        self.native.send_message(MessageType.CTRL, CommandType.APP_START, ServiceType.API)
 
     def stop(self):
         self.log.info('Stopping...')
-        self.native.send_message(MessageType.CTRL, CommandType.APP_STOP)
+        self.exit.set()
+        self.native.send_message(MessageType.CTRL, CommandType.APP_STOP, ServiceType.RT_INFER_POSTREP)
         for _ in range(20):
             result = self.status()
             self.log.info(f'Status: [{result}]')
@@ -176,6 +185,9 @@ class JetRepApp(Application):
                 break
             time.sleep(1)
         self.rpc_task.stop()
+
+    def restart(self):
+        pass
 
     def status(self):
         result = {}
@@ -193,7 +205,7 @@ class JetRepApp(Application):
 
     def stop_trt_postrep(self):
         self.log.info('Stop Trt PostRep')
-        self.tasks[self.tsk_name_postrep].stop()
+        self.tasks[self.tsk_name_postrep].stop(self.native)
         return True
 
     def start_trt_prerep(self):
@@ -203,7 +215,7 @@ class JetRepApp(Application):
 
     def stop_trt_prerep(self):
         self.log.info('Stop Trt PreRep')
-        self.tasks[self.tsk_name_prerep].stop()
+        self.tasks[self.tsk_name_prerep].stop(self.native)
         return True
 
     def start_trt_engine(self):
@@ -213,7 +225,7 @@ class JetRepApp(Application):
 
     def stop_trt_engine(self):
         self.log.info('Stop Trt Engine')
-        self.tasks[self.tsk_name_engine].stop()
+        self.tasks[self.tsk_name_engine].stop(self.native)
         return True
 
     def start_gst_launch(self):

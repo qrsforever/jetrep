@@ -22,9 +22,12 @@ DEFAULT_WGT_PATH = '/home/nano/models/repnet_b1.trt'
 class TRTEngineProcess(ServiceBase):
     name = 'InferEngine'
 
-    def __init__(self, **kwargs):
+    def __init__(self, evt_exit, **kwargs):
         self.weight_path = kwargs.pop('weight_path', DEFAULT_WGT_PATH)
-        super(TRTEngineProcess, self).__init__(**kwargs)
+        super(TRTEngineProcess, self).__init__(evt_exit, **kwargs)
+
+    def type(self):
+        return ServiceType.RT_INFER_ENGINE
 
     def task(self, remote, exit, mq_timeout):
         import sys

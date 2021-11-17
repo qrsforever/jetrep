@@ -185,7 +185,7 @@ class PSContext(Configurable):
         return str_
 
 
-class RemoteWraper(object):
+class RemoteAgent(object):
     def __init__(self, remote):
         self.impl = remote
 
@@ -198,19 +198,19 @@ class RemoteWraper(object):
     def logd(self, s):
         filename = osp.basename(sys._getframe().f_back.f_code.co_filename)
         lineno = sys._getframe().f_back.f_lineno
-        return self.impl.logd(f'{filename}:{lineno} --> {s}')
+        return self.impl.logd(f'[{os.getpid():<6}] {filename}:{lineno} --> {s}')
 
     def logi(self, s):
         filename = osp.basename(sys._getframe().f_back.f_code.co_filename)
         lineno = sys._getframe().f_back.f_lineno
-        return self.impl.logi(f'{filename}:{lineno} --> {s}')
+        return self.impl.logi(f'[{os.getpid():<6}] {filename}:{lineno} --> {s}')
 
     def logw(self, s):
         filename = osp.basename(sys._getframe().f_back.f_code.co_filename)
         lineno = sys._getframe().f_back.f_lineno
-        return self.impl.logw(f'{filename}:{lineno} --> {s}')
+        return self.impl.logw(f'[{os.getpid():<6}] {filename}:{lineno} --> {s}')
 
     def loge(self, s):
         filename = osp.basename(sys._getframe().f_back.f_code.co_filename)
         lineno = sys._getframe().f_back.f_lineno
-        return self.impl.loge(f'{filename}:{lineno} --> {s}')
+        return self.impl.loge(f'[{os.getpid():<6}] {filename}:{lineno} --> {s}')
