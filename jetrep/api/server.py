@@ -86,15 +86,13 @@ if __name__ == "__main__":
                 connect_to='tcp://{}:{}'.format(args.rpc_host, args.rpc_port),
                 timeout=10,
                 passive_heartbeat=True)
-            # app.send_message = lambda *args, **kwargs: send_message(remote, *args, **kwargs)
-            # app.send_message(MessageType.STATE, ServiceType.API, StateType.STARTING, 'repapi')
-            remote.send_message(MessageType.STATE, ServiceType.API, StateType.STARTING, 'repapi')
+            remote.send_message(MessageType.STATE, ServiceType.API, StateType.STARTED, 'repapi')
             app.remote = remote
 
             server = pywsgi.WSGIServer((args.host, args.port), app)
 
             def shutdown(num, frame):
-                remote.send_message(MessageType.STATE, ServiceType.API, StateType.STOPPING, 'repapi')
+                remote.send_message(MessageType.STATE, ServiceType.API, StateType.STOPPED, 'repapi')
                 server.stop()
                 remote.close()
                 sys.stderr.write('End!!!\n')

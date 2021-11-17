@@ -55,9 +55,6 @@ class TRTPostrepProcess(ServiceBase):
                 bucket = self.mQout.get(timeout=mq_timeout)
             except queue.Empty:
                 continue
-            except Exception as err:
-                remote.loge(f'Err: {err}')
-                break
 
             within_scores, period_scores = bucket.within_scores, bucket.period_scores
 
@@ -90,7 +87,7 @@ class TRTPostrepProcess(ServiceBase):
                 else:
                     sumcount = c
                 cap.release()
+            if os.path.exists(bucket.raw_frames_path):
                 os.unlink(bucket.raw_frames_path)
             del bucket
         writer.release()
-        remote.send_message(MessageType.STATE, ServiceType.RT_INFER_POSTREP, StateType.STOPPED)

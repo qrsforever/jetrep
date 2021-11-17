@@ -26,6 +26,8 @@ class CommandType(IntEnum):
     APP_STOP = 3
     APP_RESTART = 4
 
+    API_SET_PARAM = 10
+
 
 @unique
 class LogType(IntEnum):
@@ -56,6 +58,9 @@ class StateType(IntEnum):
     STOPPING = 4
     STOPPED = 5
     STOPPTIMEOUT = 6
+    RUNNING = 7
+
+    CRASHED = 99
 
 
 @unique

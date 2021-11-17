@@ -7,11 +7,11 @@
 # @version 1.0
 # @date 2021-11-10 18:38
 
-from traitlets.config.configurable import Configurable
+from traitlets.config.configurable import LoggingConfigurable
 from traitlets import Unicode
 
 
-class GElement(Configurable):
+class GElement(LoggingConfigurable):
 
     name = Unicode('')
 

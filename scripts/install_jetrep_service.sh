@@ -32,8 +32,9 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     RestartSec=3
     ExecStartPre=-/bin/bash $TOP_DIR/scripts/stop_services.sh
     ExecStart=/usr/bin/python3 jetrep/core/main.py --debug -c etc/jetrep.json
+    ExecStopPost=-/bin/bash $TOP_DIR/scripts/stop_services.sh
     TimeoutStartSec=30
-    TimeoutStopSec=30
+    TimeoutStopSec=20
     StandardOutput=syslog
     StandardError=syslog
 

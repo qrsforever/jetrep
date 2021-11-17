@@ -11,8 +11,8 @@
         "focus_box": [0, 0, 1, 1],
         "black_box": [0, 0, 0, 0],
         "area_rate": 0.001,
-        "strides": [3],
-        "video_clips_path": "/home/nono/omega/gst",
+        "strides": [5],
+        "video_clips_path": "/home/nano/omega/gst",
         "synth_video": {
             "rtmp": {
                 "server": "0.0.0.0",

@@ -9,21 +9,22 @@
 
 import os, sys
 import time
+import shutil
 import jsonschema
 import traitlets
 import os.path as osp
-from traitlets.config.configurable import Configurable
+from traitlets.config.configurable import LoggingConfigurable
 from traitlets import Int, Float, Unicode, Tuple, List, Dict
 
 
-class PSContext(Configurable):
+class PSContext(LoggingConfigurable):
     frame_size = Tuple((640, 480))
     frame_rate = Int(30)
     focus_box = List(Float(min=0., max=1.), [0.0, 0.0, 1.0, 1.0], minlen=4, maxlen=4).tag(config=True)
     black_box = List(Float(min=0., max=1.), [0.0, 0.0, 0.0, 0.0], minlen=4, maxlen=4).tag(config=True)
     area_rate = Float(default_value=0.002, min=0.0, max=0.05).tag(config=True)
     strides = List(trait=Int(), default_value=[4], minlen=1, maxlen=3).tag(config=True)
-    video_clips_path = Unicode('/tmp').tag(config=True)
+    video_clips_path = Unicode('/tmp/videos').tag(config=True)
 
     # synth_video_rtmp = Dict(traits={'server': Unicode(), 'port': Int(1935), 'stream': Unicode()})
     synth_video_schema = {
@@ -53,26 +54,26 @@ class PSContext(Configurable):
     K = F * 15
 
     def __init__(self, *args, **kwargs):
-        super(PSContext, self).__init__(*args, **kwargs)
-
         self._focus_box = None
         self._black_box = None
         self._stride = 4
         self._max_raw_frames = self._stride * self.K
         self._area_thresh = 0
+        super(PSContext, self).__init__(*args, **kwargs)
+
+    def setup(self):
+        self.parent.log.info(f'{self.make_bucket()}')
 
     class FBucket(dict):
         __getattr__ = dict.get
         __setattr__ = dict.__setitem__
         __delattr__ = dict.__delitem__
 
-        tmp_dir = '/tmp'
-
-        def __init__(self, *args, **kwargs):
+        def __init__(self, video_path, *args, **kwargs):
             super(PSContext.FBucket, self).__init__(*args, **kwargs)
             self.token = int(time.time() * 1000)
             self.raw_frames_count = 0
-            self.raw_frames_path = f'{self.tmp_dir}/{self.token}.mp4'
+            self.raw_frames_path = f'{video_path}/{self.token}.mp4'
             self.inputs = []
             self.selected_indices = []
             for arg in args:
@@ -89,16 +90,8 @@ class PSContext(Configurable):
         def __setstate__(self, d):
             self.__dict__.update(d)
 
-        def __str__(self):
-            return 'token: {}, raw_frames_count: {}, raw_frames_path: {}, selected_indices: {}'.format(
-                self.token,
-                self.raw_frames_count,
-                self.raw_frames_path,
-                self.selected_indices
-            )
-
     def make_bucket(self):
-        bucket = self.FBucket()
+        bucket = self.FBucket(self.video_clips_path)
         bucket.frame_size = self.frame_size
         bucket.frame_rate = self.frame_rate
         bucket.focus_box = self._focus_box
@@ -106,6 +99,7 @@ class PSContext(Configurable):
         bucket.stride = self._stride
         bucket.area_thresh = self._area_thresh
         bucket.max_frame_count = self._stride * self.K
+        self.parent.log.info(bucket)
         return bucket
 
     @staticmethod
@@ -149,13 +143,9 @@ class PSContext(Configurable):
     @traitlets.observe('strides')
     def _on_strides(self, change):
         # TODO only support one stride
+        self.parent.log.info(f'-----------------{change}')
         self._stride = change['new'][0]
         self._max_raw_frames = self._stride * self.K
-
-    @traitlets.observe('video_clips_path')
-    def _on_video_clips_path(self, change):
-        if os.path.isdir(change['new']):
-            self.FBucket.tmp_dir = change['new']
 
     @traitlets.validate('focus_box')
     def _check_focus_box(self, proposal):
@@ -171,8 +161,19 @@ class PSContext(Configurable):
             raise traitlets.TraitError(f'Parameter focus_box is invalid: {value}')
         return value
 
+    @traitlets.validate('video_clips_path')
+    def _validate_video_clips_path(self, proposal):
+        value = proposal['value']
+        if not value.endswith('videos'):
+            value = os.path.join(value, 'videos')
+        if os.path.exists(value):
+            shutil.rmtree(value)
+        print("make ----------------------------", value)
+        os.makedirs(value)
+        return value
+
     @traitlets.validate('synth_video')
-    def _validate_value(self, proposal):
+    def _validate_synth_video(self, proposal):
         try:
             jsonschema.validate(proposal['value'], self.synth_video_schema)
         except jsonschema.ValidationError as e:

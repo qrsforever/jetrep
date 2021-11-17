@@ -21,6 +21,7 @@ from jetrep.core.message import (
     MessageType,
     CommandType,
     ServiceType,
+    StateType,
     LogType,
 )
 from jetrep.core.handlers import (
@@ -39,6 +40,7 @@ from jetrep.utils.shell import (
     util_start_service,
     util_stop_service
 )
+from jetrep.constants import JPath
 from jetrep.core.context import PSContext
 
 
@@ -132,7 +134,6 @@ class JetRepApp(Application):
         console.setFormatter(formatter)
         # console.addFilter(thread_id_filter)
 
-        formatter = self._log_formatter_cls(fmt=self.log_format, datefmt=self.log_datefmt)
         filelog = RotatingFileHandler(
                 self.log_file, mode='a', maxBytes=5*1024*1024, backupCount=5, encoding=None, delay=0)
         filelog.setFormatter(formatter)
@@ -145,8 +146,11 @@ class JetRepApp(Application):
         self.parse_command_line(argv)
         if self.config_file:
             self.load_config_file(self.config_file)
+        # if os.path.exists(JPath.JETREP_CONF_PATH):
+        #     self.load_config_file(JPath.JETREP_CONF_PATH)
+
         print(self.config)
-        print(self.print_help(classes=True))
+        # print(self.print_help(classes=True))
 
     def setup(self):
         self.log_looper = LogHandlerThread()
@@ -161,21 +165,40 @@ class JetRepApp(Application):
         self.rpc_task = ServiceRPC(self, self.rpc_ip, self.rpc_port)
 
         self.log.info('Setup Trt Tasks')
-        self.exit, self.mq_in, self.mq_out, self.psctx = Event(), Queue(), Queue(), PSContext(parent=self)
+        self.exit, self.mq_in, self.mq_out = Event(), Queue(), Queue()
+        self.psctx = PSContext(parent=self)
         self.tasks = {}
         for cls in (TRTEngineProcess, TRTPrerepProcess, TRTPostrepProcess):
             self.log.info(f'Setup {cls.name}')
             self.tasks[cls.name] = cls(self.exit, ip=self.rpc_ip, port=self.rpc_port, mq_in=self.mq_in, mq_out=self.mq_out)
 
+        self.psctx.setup()
+
+    def meld_config_file(self, jfile):
+        if os.path.exists(jfile):
+            self.load_config_file(jfile)
+            self.log.info(f'-{self.psctx.strides}-------------{self.config}')
+
+    def set_state(self, state):
+        self.state = state
+
+    def get_state(self):
+        return self.state
+
     def start(self):
         self.log.info('Starting...')
+        self.set_state(StateType.STARTING)
         self.log_looper.start()
         self.main_looper.start()
         self.rpc_task.start()
         self.native.send_message(MessageType.CTRL, CommandType.APP_START, ServiceType.API)
 
+    def restart(self):
+        return not util_start_service('jetrep', restart=True)
+
     def stop(self):
         self.log.info('Stopping...')
+        self.set_state(StateType.STOPPING)
         self.exit.set()
         self.native.send_message(MessageType.CTRL, CommandType.APP_STOP, ServiceType.RT_INFER_POSTREP)
         for _ in range(20):
@@ -185,9 +208,6 @@ class JetRepApp(Application):
                 break
             time.sleep(1)
         self.rpc_task.stop()
-
-    def restart(self):
-        pass
 
     def status(self):
         result = {}

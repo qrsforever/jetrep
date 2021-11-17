@@ -57,6 +57,9 @@ class ServiceBase(Process):
     def type(self):
         raise RuntimeError('Not imple subclass method')
 
+    def on_destroy(self):
+        pass
+
     def start(self):
         self.lock.release()
 
@@ -73,9 +76,17 @@ class ServiceBase(Process):
         remote = self.initialize()
         if remote:
             remote.logi(f'Process {self.name} is starting...')
-            self.task(remote, self.exit, self.mq_timeout)
-            remote.logw(f'Process {self.name} is finished...')
-            remote.close()
+            remote.send_message(MessageType.STATE, self.type(), StateType.STARTING, self.clsname)
+            try:
+                self.task(remote, self.exit, self.mq_timeout)
+                remote.send_message(MessageType.STATE, self.type(), StateType.STOPPED, self.clsname)
+            except Exception as err:
+                remote.loge(f'{err}')
+                remote.send_message(MessageType.STATE, self.type(), StateType.CRASHED, self.clsname)
+            finally:
+                self.on_destroy()
+                remote.logw(f'Process {self.name} is finished...')
+                remote.close()
         else:
             raise RuntimeError('Can not connect rpc server')
         self.exited.set()
