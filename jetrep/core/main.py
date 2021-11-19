@@ -40,7 +40,7 @@ from jetrep.utils.shell import (
     util_start_service,
     util_stop_service
 )
-from jetrep.constants import JPath
+from jetrep.constants import DefaultPath
 from jetrep.core.context import PSContext
 
 
@@ -56,7 +56,7 @@ class NativeHandler(MessageHandler):
     def handle_message(self, what, arg1, arg2, obj):
         pass
 
-    def get_props_frame(self): # width, height, rate
+    def get_props_frame(self): # height, width, rate
         return self.app.psctx.frame_size[0], \
                 self.app.psctx.frame_size[1], \
                 self.app.psctx.frame_rate
@@ -75,6 +75,9 @@ class NativeHandler(MessageHandler):
 
     def loge(self, s):
         self.log_handler.send_message(MessageType.LOG, LogType.ERROR, obj=f'{s}')
+
+    def logc(self, s):
+        self.log_handler.send_message(MessageType.LOG, LogType.CRITICAL, obj=f'{s}')
 
 
 class JetRepApp(Application):
@@ -97,7 +100,7 @@ class JetRepApp(Application):
     rpc_ip = Unicode('127.0.0.1', help='Set zerorpc host').tag(config=True)
     rpc_port = Int(8181, help='Set zerorpc port').tag(config=True)
 
-    classes = [PSContext]
+    classes = List([PSContext])
 
     aliases = Dict(
         dict(
@@ -113,8 +116,15 @@ class JetRepApp(Application):
         )
     )
 
+    @traitlets.observe('log_level')
+    def _log_level_changed(self, change):
+        new = change.new
+        if isinstance(new, str):
+            new = getattr(logging, new)
+            self.log_level = new
+        self.log.setLevel(new)
+
     @traitlets.observe('log_datefmt', 'log_format')
-    @traitlets.observe_compat
     def _log_format_changed(self, change):
         _log_formatter = self._log_formatter_cls(fmt=self.log_format, datefmt=self.log_datefmt)
         for handler in self.log.handlers:
@@ -146,8 +156,8 @@ class JetRepApp(Application):
         self.parse_command_line(argv)
         if self.config_file:
             self.load_config_file(self.config_file)
-        # if os.path.exists(JPath.JETREP_CONF_PATH):
-        #     self.load_config_file(JPath.JETREP_CONF_PATH)
+        if os.path.exists(DefaultPath.JETREP_CONF_PATH):
+            self.load_config_file(DefaultPath.JETREP_CONF_PATH)
 
         print(self.config)
         # print(self.print_help(classes=True))
@@ -166,7 +176,7 @@ class JetRepApp(Application):
 
         self.log.info('Setup Trt Tasks')
         self.exit, self.mq_in, self.mq_out = Event(), Queue(), Queue()
-        self.psctx = PSContext(parent=self)
+        self.psctx = PSContext(config=self.config, log=self.log)
         self.tasks = {}
         for cls in (TRTEngineProcess, TRTPrerepProcess, TRTPostrepProcess):
             self.log.info(f'Setup {cls.name}')
@@ -177,7 +187,8 @@ class JetRepApp(Application):
     def meld_config_file(self, jfile):
         if os.path.exists(jfile):
             self.load_config_file(jfile)
-            self.log.info(f'-{self.psctx.strides}-------------{self.config}')
+            self.psctx.update_config(self.config)
+            self.log.debug(self.config)
 
     def set_state(self, state):
         self.state = state

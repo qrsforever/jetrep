@@ -62,6 +62,19 @@ def _srs_on_stop():
 def _srs_on_dvr():
     reqjson = json.loads(request.get_data().decode())
     app.logger.info(reqjson)
+    # {
+    #     "action": "on_dvr",
+    #     "client_id": 156,
+    #     "ip": "36.110.84.59",
+    #     "vhost": "seg.30s",
+    #     "app": "f01",
+    #     "stream": "00e685ef87b4",
+    #     "param": "?vhost=seg.30s",
+    #     "cwd": "/usr/local/srs",
+    #     "file": "/frepai/data/f01/00e685ef87b4/20210629170921.mp4"
+    # }
+    # basefile = os.path.basename(reqjson['file'])
+    # localfile = os.path.join(reqjson['cwd'], reqjson['file'])
     return OK
 
 

@@ -13,11 +13,11 @@
     Restart=always
     RestartSec=10
     # ExecStartPre=-/bin/systemctl restart nvargus-daemon
-    ExecStartPre=-/usr/bin/curl -d '{"name": "jetgst", "status": "starting"}' http://127.0.0.1:8282/apis/svc/v1/status
+    ExecStartPre=-/usr/bin/curl -d '{"name": "jetgst", "status": "starting"}' http://127.0.0.1:80/apis/svc/status
     ExecStart=/usr/bin/python3 jetrep/stream -c etc/jetgst.json
     ExecStartPost=/bin/sleep 2
-    ExecStartPost=-/usr/bin/curl -d '{"name": "jetgst", "status": "started"}' http://127.0.0.1:8282/apis/svc/v1/status
-    ExecStopPost=-/usr/bin/curl -d '{"name": "jetgst", "status": "stopped"}' http://127.0.0.1:8282/apis/svc/v1/status
+    ExecStartPost=-/usr/bin/curl -d '{"name": "jetgst", "status": "started"}' http://127.0.0.1:80/apis/svc/status
+    ExecStopPost=-/usr/bin/curl -d '{"name": "jetgst", "status": "stopped"}' http://127.0.0.1:80/apis/svc/status
     TimeoutStartSec=10
     TimeoutStopSec=5
     StandardOutput=syslog

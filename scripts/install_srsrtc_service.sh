@@ -7,7 +7,7 @@ DST_DIR=/etc/systemd/system/
 
 SERVICE=srsrtc.service
 SRS_DIR=/home/nano/srs
-RESTAPI=http://127.0.0.1:8282/apis/svc/v1/status
+RESTAPI=http://127.0.0.1:80/apis/svc/status
 
 XRUN=
 if [[ 0 != $(id -u) ]]

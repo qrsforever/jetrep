@@ -6,7 +6,7 @@ TOP_DIR=$(dirname $CUR_DIR)
 DST_DIR=/etc/systemd/system/
 
 SERVICE=repapi.service
-RESTAPI=http://127.0.0.1:8282/apis/svc/v1/status
+RESTAPI=http://127.0.0.1:80/apis/svc/status
 
 XRUN=
 if [[ 0 != $(id -u) ]]
@@ -31,7 +31,7 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     Environment="PYTHONPATH=$TOP_DIR"
     Restart=always
     RestartSec=5
-    ExecStart=/usr/bin/python3 jetrep/api/server.py --host 0.0.0.0 --port 8282 --rpc_host 127.0.0.1 --rpc_port 8181
+    ExecStart=/usr/bin/python3 jetrep/api/server.py --host 0.0.0.0 --port 80 --rpc_host 127.0.0.1 --rpc_port 8181
     TimeoutStartSec=10
     TimeoutStopSec=5
     StandardOutput=syslog

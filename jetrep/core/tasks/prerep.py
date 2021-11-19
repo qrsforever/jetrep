@@ -29,6 +29,7 @@ class TRTPrerepProcess(ServiceBase):
         return ServiceType.RT_INFER_PREREP
 
     def task(self, remote, exit, mq_timeout):
+        import time
         width, height, rate = remote.get_props_frame()
         gst_str = ' ! '.join([
             f'shmsrc socket-path={self.shm_path}',
@@ -64,9 +65,8 @@ class TRTPrerepProcess(ServiceBase):
                 break
             if bucket is None:
                 bucket = DumpDict(remote.get_bucket())
-                writer = cv2.VideoWriter(
-                    bucket.raw_frames_path,
-                    cv2.VideoWriter_fourcc(*'mp4v'), frame_rate, frame_size)
+                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                writer = cv2.VideoWriter(bucket.raw_frames_path, fourcc, frame_rate, frame_size)
 
             bucket.raw_frames_count += 1
             writer.write(frame_bgr)
@@ -95,10 +95,11 @@ class TRTPrerepProcess(ServiceBase):
             else:
                 keep_flag += 1
 
-            if keep_flag % bucket.stride == 0 or bucket.raw_frames_count > bucket.max_frame_count:
+            current_time = time.time()
+            if keep_flag % bucket.stride == 0 or current_time > bucket.terminal_time:
                 frame_bgr = cv2.resize(frame_bgr, (112, 112))
                 frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-                if bucket.raw_frames_count > bucket.max_frame_count:
+                if current_time > bucket.terminal_time:
                     diff = 64 - len(bucket.selected_indices)
                     for _ in range(diff):
                         bucket.selected_indices.append(bucket.raw_frames_count - 1)
@@ -111,6 +112,7 @@ class TRTPrerepProcess(ServiceBase):
                     writer.release(); writer = None # noqa
                     self.mQin.put(bucket)
                     del bucket; bucket = None # noqa
+                    del pre_frame; pre_frame = None # noqa
                 keep_flag = 1
         if cap.isOpened():
             cap.release()

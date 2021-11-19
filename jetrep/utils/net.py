@@ -19,3 +19,14 @@ def util_check_port(port, ip='127.0.0.1', trycnt=1):
             return True
         time.sleep(1)
     return False
+
+
+def util_get_lanip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        val = '0.0.0.0'
+        s.connect(('8.8.8.8', 80))
+        val = s.getsockname()[0]
+    finally:
+        s.close()
+    return val

@@ -11,7 +11,7 @@ import sys
 import argparse
 import zerorpc
 
-from flask import Flask
+from flask import Flask, Response, redirect, request # noqa
 from flask_cors import CORS
 from gevent import pywsgi
 from gevent import signal
@@ -21,7 +21,7 @@ from jetrep.api.routers import (
     api_sys,
     api_rep
 )
-from jetrep.utils.net import util_check_port
+from jetrep.utils.net import util_check_port, util_get_lanip
 from jetrep.core.message import (
     MessageType,
     ServiceType,
@@ -32,15 +32,23 @@ app = Flask('JetRep::Apiserver')
 app.debug = True
 CORS(app, supports_credentials=True)
 
-app.register_blueprint(api_svc, url_prefix="/apis/svc/v1")
-app.register_blueprint(api_srs, url_prefix="/apis/srs/v1")
-app.register_blueprint(api_sys, url_prefix="/apis/sys/v1")
-app.register_blueprint(api_rep, url_prefix="/apis/rep/v1")
+app.register_blueprint(api_svc, url_prefix='/apis/svc')
+app.register_blueprint(api_srs, url_prefix='/apis/srs')
+app.register_blueprint(api_sys, url_prefix='/apis/sys')
+app.register_blueprint(api_rep, url_prefix='/apis/rep')
 
 
 @app.route('/')
 def homepage():
-    return 'Hello World!'
+    return 'Hello, Jetson Repnet!'
+
+
+@app.route('/player/<int:stream>/<int:duration>')
+def _app_rtc_player(stream, duration):
+    if duration not in (60, 300, 600, 900, 1200, 1800):
+        return Response('URI error!', status=400, headers={})
+    rtcsvr = util_get_lanip()
+    return redirect(f'http://{rtcsvr}:8080/players/rtc_player.html?vhost=jet{duration}&app=live&stream={stream}&autostart=true')
 
 
 if __name__ == "__main__":
@@ -53,7 +61,7 @@ if __name__ == "__main__":
             help="host to run jetrep api service")
     parser.add_argument(
             '--port',
-            default=8282,
+            default=80,
             type=int,
             dest='port',
             help="port to run jetrep api service")

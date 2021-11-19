@@ -1,6 +1,6 @@
 {
     "JetRepApp": {
-        "log_level": 10,
+        "log_level": "DEBUG",
         "log_datefmt": "%Y-%m-%d %H:%M:%S",
         "log_format": "%(thread)d %(asctime)s %(levelname)s %(message)s",
         "log_file": "/tmp/jetrep.log",
@@ -12,12 +12,13 @@
         "black_box": [0, 0, 0, 0],
         "area_rate": 0.001,
         "strides": [5],
-        "video_clips_path": "/home/nano/omega/gst",
+        "video_clips_path": "/home/nano/",
         "synth_video": {
             "rtmp": {
                 "server": "0.0.0.0",
                 "port": 1935,
-                "stream": "2"
+                "stream": "2",
+                "duration": 300
             }
         }
     }

@@ -64,7 +64,10 @@ class ServiceBase(Process):
         self.lock.release()
 
     def stop(self, handler):
-        # self.lock.release() # TODO call stop before start
+        try:
+            self.lock.release() # TODO call stop before start
+        except Exception:
+            pass
         handler.send_message(MessageType.STATE, self.type(), StateType.STOPPING, self.clsname)
         self.exited.wait(timeout=2*self.mq_timeout)
         if not self.exited.is_set():
@@ -72,7 +75,13 @@ class ServiceBase(Process):
         self.join(0.5)
 
     def run(self):
+        import signal
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        signal.signal(signal.SIGTERM, signal.SIG_IGN)
         self.lock.acquire()
+        while self.exit.is_set():
+            return
+        import traceback
         remote = self.initialize()
         if remote:
             remote.logi(f'Process {self.name} is starting...')
@@ -80,8 +89,8 @@ class ServiceBase(Process):
             try:
                 self.task(remote, self.exit, self.mq_timeout)
                 remote.send_message(MessageType.STATE, self.type(), StateType.STOPPED, self.clsname)
-            except Exception as err:
-                remote.loge(f'{err}')
+            except Exception:
+                remote.loge(f'{traceback.format_exc(limit=6)}')
                 remote.send_message(MessageType.STATE, self.type(), StateType.CRASHED, self.clsname)
             finally:
                 self.on_destroy()
@@ -100,11 +109,7 @@ class ServiceBase(Process):
         return self.mq_out
 
     def initialize(self):
-        import signal, zerorpc
-
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        signal.signal(signal.SIGTERM, signal.SIG_IGN)
-
+        import zerorpc
         return RemoteAgent(
                 zerorpc.Client(
                     connect_to='tcp://{}:{}'.format(self.ip, self.port),

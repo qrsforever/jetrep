@@ -15,6 +15,7 @@ import traitlets
 import os.path as osp
 from traitlets.config.configurable import LoggingConfigurable
 from traitlets import Int, Float, Unicode, Tuple, List, Dict
+from jetrep.constants import DefaultServer
 
 
 class PSContext(LoggingConfigurable):
@@ -23,8 +24,10 @@ class PSContext(LoggingConfigurable):
     focus_box = List(Float(min=0., max=1.), [0.0, 0.0, 1.0, 1.0], minlen=4, maxlen=4).tag(config=True)
     black_box = List(Float(min=0., max=1.), [0.0, 0.0, 0.0, 0.0], minlen=4, maxlen=4).tag(config=True)
     area_rate = Float(default_value=0.002, min=0.0, max=0.05).tag(config=True)
+    max_duration = Int(30).tag(config=True)
+    init_count = Int(0).tag(config=True)
     strides = List(trait=Int(), default_value=[4], minlen=1, maxlen=3).tag(config=True)
-    video_clips_path = Unicode('/tmp/videos').tag(config=True)
+    video_clips_path = Unicode('/tmp/video_clips').tag(config=True)
 
     # synth_video_rtmp = Dict(traits={'server': Unicode(), 'port': Int(1935), 'stream': Unicode()})
     synth_video_schema = {
@@ -36,8 +39,9 @@ class PSContext(LoggingConfigurable):
                      'server' : {'type' : 'string'},
                      'port': {'type': 'number'},
                      'stream' : {'type' : 'string'},
+                     'duration' : {'type' : 'number'},
                  },
-                 'required': ['server', 'port', 'stream']
+                 'required': ['server']
              },
              'file': {
                  'type': 'object',
@@ -51,29 +55,31 @@ class PSContext(LoggingConfigurable):
     synth_video = Dict().tag(config=True)
 
     F = 64
-    K = F * 15
 
     def __init__(self, *args, **kwargs):
         self._focus_box = None
         self._black_box = None
         self._stride = 4
-        self._max_raw_frames = self._stride * self.K
         self._area_thresh = 0
+        self._rtmp_url = None
         super(PSContext, self).__init__(*args, **kwargs)
 
     def setup(self):
-        self.parent.log.info(f'{self.make_bucket()}')
+        self.log.info(f'{self.make_bucket()}')
+        if os.path.exists(self.video_clips_path):
+            shutil.rmtree(self.video_clips_path)
+        os.makedirs(self.video_clips_path)
 
     class FBucket(dict):
         __getattr__ = dict.get
         __setattr__ = dict.__setitem__
         __delattr__ = dict.__delitem__
 
-        def __init__(self, video_path, *args, **kwargs):
+        def __init__(self, video_clips_path, *args, **kwargs):
             super(PSContext.FBucket, self).__init__(*args, **kwargs)
             self.token = int(time.time() * 1000)
             self.raw_frames_count = 0
-            self.raw_frames_path = f'{video_path}/{self.token}.mp4'
+            self.raw_frames_path = f'{video_clips_path}/{self.token}.mp4'
             self.inputs = []
             self.selected_indices = []
             for arg in args:
@@ -98,13 +104,27 @@ class PSContext(LoggingConfigurable):
         bucket.black_box = self._black_box
         bucket.stride = self._stride
         bucket.area_thresh = self._area_thresh
-        bucket.max_frame_count = self._stride * self.K
-        self.parent.log.info(bucket)
+        bucket.terminal_time = time.time() + self.max_duration
+        bucket.initcount = self.init_count
+        bucket.rtmp_url = self._rtmp_url
+        self.log.debug(bucket)
         return bucket
 
     @staticmethod
     def calc_rect_box(w, h, box):
         return [int(w * box[0]), int(h * box[1]), int(w * box[2]), int(h * box[3])]
+
+    @traitlets.observe('synth_video')
+    def _on_synth_video(self, change):
+        conf = change['new']
+        if 'rtmp' in conf:
+            server = conf['rtmp'].get('server')
+            port = conf['rtmp'].get('port', DefaultServer.RTMP_PORT)
+            stream = conf['rtmp'].get('stream', DefaultServer.RTMP_STREAM_POST)
+            duration = conf['rtmp'].get('duration', DefaultServer.RTMP_DVR_DURATION)
+            self._rtmp_url = f'rtmp://{server}:{port}/live/{stream}?vhost=jet{duration}'
+        else:
+            pass
 
     @traitlets.observe('frame_size')
     def _on_frame_size(self, change):
@@ -124,6 +144,8 @@ class PSContext(LoggingConfigurable):
             self._focus_box = None
             return
         self._focus_box = self.calc_rect_box(self.frame_size[0], self.frame_size[1], change['new'])
+        x1, y1, x2, y2 = self._focus_box
+        self._area_thresh = int((x2 - x1) * (y2 - y1) * self.area_rate)
 
     @traitlets.observe('black_box')
     def _on_black_box(self, change):
@@ -136,20 +158,19 @@ class PSContext(LoggingConfigurable):
     def _on_area_rate(self, change):
         if self._focus_box:
             x1, y1, x2, y2 = self._focus_box
-            self._area_thresh = (x2 - x1) * (y2 - y1) * change['new']
+            self._area_thresh = int((x2 - x1) * (y2 - y1) * change['new'])
             return
         self._area_thresh = int(self.frame_size[0] * self.frame_size[1] * change['new'])
 
     @traitlets.observe('strides')
     def _on_strides(self, change):
         # TODO only support one stride
-        self.parent.log.info(f'-----------------{change}')
         self._stride = change['new'][0]
-        self._max_raw_frames = self._stride * self.K
 
     @traitlets.validate('focus_box')
     def _check_focus_box(self, proposal):
         value = proposal['value']
+        self.log.debug(value)
         if value[0] >= value[2] or value[1] >= value[3]:
             raise traitlets.TraitError(f'focus_box invalid: {value}')
         return value
@@ -157,6 +178,7 @@ class PSContext(LoggingConfigurable):
     @traitlets.validate('black_box')
     def _check_black_box(self, proposal):
         value = proposal['value']
+        self.log.debug(value)
         if value[0] > value[2] or value[1] > value[3]:
             raise traitlets.TraitError(f'Parameter focus_box is invalid: {value}')
         return value
@@ -164,18 +186,18 @@ class PSContext(LoggingConfigurable):
     @traitlets.validate('video_clips_path')
     def _validate_video_clips_path(self, proposal):
         value = proposal['value']
+        self.log.debug(value)
         if not value.endswith('videos'):
             value = os.path.join(value, 'videos')
-        if os.path.exists(value):
-            shutil.rmtree(value)
-        print("make ----------------------------", value)
-        os.makedirs(value)
+        os.makedirs(value, exist_ok=True)
         return value
 
     @traitlets.validate('synth_video')
     def _validate_synth_video(self, proposal):
+        value = proposal['value']
+        self.log.debug(value)
         try:
-            jsonschema.validate(proposal['value'], self.synth_video_schema)
+            jsonschema.validate(value, self.synth_video_schema)
         except jsonschema.ValidationError as e:
             raise traitlets.TraitError(e)
         return proposal['value']
@@ -215,3 +237,8 @@ class RemoteAgent(object):
         filename = osp.basename(sys._getframe().f_back.f_code.co_filename)
         lineno = sys._getframe().f_back.f_lineno
         return self.impl.loge(f'[{os.getpid():<6}] {filename}:{lineno} --> {s}')
+
+    def logc(self, s):
+        filename = osp.basename(sys._getframe().f_back.f_code.co_filename)
+        lineno = sys._getframe().f_back.f_lineno
+        return self.impl.logc(f'[{os.getpid():<6}] {filename}:{lineno} --> {s}')

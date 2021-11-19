@@ -14,8 +14,8 @@ from .gconvert import GDataConvert
 
 class GH264CodecCvt(GDataConvert):
     name = Unicode(default_value='h264cvt')
-    bitrate = Int(default_value=4000000, help='Set bitrate for v4l2 encode').tag(config=True)
-    profile = Enum((0,2,4), default_value=4, help='Set profile for v4l2 encode').tag(config=True)
+    bitrate = Int(default_value=40000, help='Set bitrate for v4l2 encode').tag(config=True)
+    profile = Enum((0,2,4), default_value=0, help='Set profile for v4l2 encode').tag(config=True)
     preset_level = Enum((0,1,2,3,4), default_value=1, help='HW preset level for encode').tag(config=True)
 
     def gst_pipe(self):
