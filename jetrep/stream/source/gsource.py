@@ -7,15 +7,11 @@
 # @version 1.0
 # @date 2021-11-10 18:41
 
-import traitlets
-import uuid
-from traitlets import Unicode, Int, Enum
+from traitlets import Int, Enum
 from jetrep.stream.gelement import GElement
 
 
 class GDataSource(GElement):
-    uuid = Unicode('')
-
     width = Int(default_value=640, help='Source video frame width').tag(config=True)
     height = Int(default_value=480, help='Source video frame height').tag(config=True)
     framerate = Int(default_value=30, help='Source video frame rate').tag(config=True)
@@ -24,10 +20,6 @@ class GDataSource(GElement):
 
     def __init__(self, *args, **kwargs):
         super(GDataSource, self).__init__(None, *args, **kwargs)
-
-    @traitlets.default('uuid')
-    def _default_uuid(self):
-        return uuid.UUID(int=uuid.getnode()).hex[-12:]
 
     def gst_pipe(self):
         return [

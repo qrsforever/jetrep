@@ -16,6 +16,7 @@ class MessageType(IntEnum):
     LOG = 1
     CTRL = 2
     STATE = 3
+    NOTIFY = 4
     QUIT = 99
 
 
@@ -65,6 +66,16 @@ class StateType(IntEnum):
 
 
 @unique
+class NotifyType(IntEnum):
+    TO_CLOUD = 1
+
+
+@unique
+class PayloadType(IntEnum):
+    REP_INFER_RESULT = 10
+
+
+@unique
 class EmptyType(IntEnum):
     NOP = 1
 
@@ -80,6 +91,8 @@ def pretty_format(what, arg1, arg2):
         elif what == MessageType.STATE:
             arg1 = ServiceType(arg1)
             arg2 = StateType(arg2)
+        elif what == MessageType.NOTIFY:
+            arg1 = NotifyType(arg1)
         else:
             return '%d, %d, %d' % (what, arg1, arg2)
         what = MessageType(what)

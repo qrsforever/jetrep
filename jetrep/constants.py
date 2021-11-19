@@ -8,11 +8,16 @@
 # @date 2021-11-17 18:51
 
 import os
+import os.path as osp
 
 
 class DefaultPath(object):
-    WORKING_DIRECTORY = '.'
-    JETREP_CONF_PATH = os.path.join(WORKING_DIRECTORY, 'runtime', 'jetrep.json')
+    WORKING_DIRECTORY = os.getcwd()
+    RUNTIME_DIRECTORY = osp.join(WORKING_DIRECTORY, 'runtime')
+    JETREP_DEF_CONF_PATH = osp.join(WORKING_DIRECTORY, 'etc', 'jetrep.json')
+    JETREP_CONF_PATH = osp.join(RUNTIME_DIRECTORY, 'jetrep.json')
+
+    VIDEO_CLIPS_PATH = osp.join(RUNTIME_DIRECTORY, 'videos')
 
 
 class DefaultServer(object):

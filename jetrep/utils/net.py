@@ -9,6 +9,7 @@
 
 import socket
 import time
+import uuid
 
 
 def util_check_port(port, ip='127.0.0.1', trycnt=1):
@@ -30,3 +31,7 @@ def util_get_lanip():
     finally:
         s.close()
     return val
+
+
+def util_get_uuid():
+    return uuid.UUID(int=uuid.getnode()).hex[-12:]

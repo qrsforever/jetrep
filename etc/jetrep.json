@@ -8,10 +8,22 @@
         "rpc_port": 8181
     },
     "PSContext": {
-        "focus_box": [0, 0, 1, 1],
-        "black_box": [0, 0, 0, 0],
+        "focus_box": [
+            0.2,
+            0.2,
+            0.8,
+            0.8
+        ],
+        "black_box": [
+            0.1,
+            0.1,
+            0.3,
+            0.3
+        ],
         "area_rate": 0.001,
-        "strides": [5],
+        "strides": [
+            4
+        ],
         "video_clips_path": "/home/nano/",
         "synth_video": {
             "rtmp": {
@@ -20,6 +32,7 @@
                 "stream": "2",
                 "duration": 300
             }
-        }
+        },
+        "max_duration": 20
     }
 }

@@ -14,8 +14,10 @@ import jsonschema
 import traitlets
 import os.path as osp
 from traitlets.config.configurable import LoggingConfigurable
-from traitlets import Int, Float, Unicode, Tuple, List, Dict
+from traitlets import Int, Float, Unicode, Tuple, List, Dict, Bool
 from jetrep.constants import DefaultServer
+from jetrep.utils.net import util_get_uuid
+from jetrep.constants import DefaultPath
 
 
 class PSContext(LoggingConfigurable):
@@ -25,9 +27,9 @@ class PSContext(LoggingConfigurable):
     black_box = List(Float(min=0., max=1.), [0.0, 0.0, 0.0, 0.0], minlen=4, maxlen=4).tag(config=True)
     area_rate = Float(default_value=0.002, min=0.0, max=0.05).tag(config=True)
     max_duration = Int(30).tag(config=True)
-    init_count = Int(0).tag(config=True)
+    reset_count = Bool(False).tag(config=True)
     strides = List(trait=Int(), default_value=[4], minlen=1, maxlen=3).tag(config=True)
-    video_clips_path = Unicode('/tmp/video_clips').tag(config=True)
+    video_clips_path = Unicode(DefaultPath.VIDEO_CLIPS_PATH).tag(config=True)
 
     # synth_video_rtmp = Dict(traits={'server': Unicode(), 'port': Int(1935), 'stream': Unicode()})
     synth_video_schema = {
@@ -77,9 +79,9 @@ class PSContext(LoggingConfigurable):
 
         def __init__(self, video_clips_path, *args, **kwargs):
             super(PSContext.FBucket, self).__init__(*args, **kwargs)
-            self.token = int(time.time() * 1000)
+            self.start_time = int(time.time() * 1000)
             self.raw_frames_count = 0
-            self.raw_frames_path = f'{video_clips_path}/{self.token}.mp4'
+            self.raw_frames_path = f'{video_clips_path}/{self.start_time}.mp4'
             self.inputs = []
             self.selected_indices = []
             for arg in args:
@@ -105,9 +107,11 @@ class PSContext(LoggingConfigurable):
         bucket.stride = self._stride
         bucket.area_thresh = self._area_thresh
         bucket.terminal_time = time.time() + self.max_duration
-        bucket.initcount = self.init_count
+        bucket.reset_count = self.reset_count
         bucket.rtmp_url = self._rtmp_url
         self.log.debug(bucket)
+        if self.reset_count:
+            self.reset_count = False
         return bucket
 
     @staticmethod
@@ -122,7 +126,7 @@ class PSContext(LoggingConfigurable):
             port = conf['rtmp'].get('port', DefaultServer.RTMP_PORT)
             stream = conf['rtmp'].get('stream', DefaultServer.RTMP_STREAM_POST)
             duration = conf['rtmp'].get('duration', DefaultServer.RTMP_DVR_DURATION)
-            self._rtmp_url = f'rtmp://{server}:{port}/live/{stream}?vhost=jet{duration}'
+            self._rtmp_url = f'rtmp://{server}:{port}/{util_get_uuid()}_post/{stream}?vhost=jet{duration}'
         else:
             pass
 

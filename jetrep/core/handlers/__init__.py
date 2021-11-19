@@ -4,9 +4,11 @@
 from .log import LogHandler
 from .state import StateHandler
 from .default import DefaultHandler
+from .notify import NotifyHandler
 
 __all__ = [
     "LogHandler",
-    "StateHandler",
     "DefaultHandler",
+    "StateHandler",
+    "NotifyHandler",
 ]

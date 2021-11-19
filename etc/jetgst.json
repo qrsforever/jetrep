@@ -20,7 +20,7 @@
         "flip_method": 0
     },
     "GH264CodecCvt": {
-        "bitrate": 500000
+        "bitrate": 500
     },
     "ShareMemorySink": {
         "path": "/tmp/gst_repnet.shm",

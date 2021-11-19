@@ -8,7 +8,7 @@
 # @date 2021-11-11 21:01
 
 import sys, os, signal, traceback # noqa
-import logging, time
+import logging, time, json
 import traitlets
 import multiprocessing
 from multiprocessing import Event, Queue
@@ -26,8 +26,9 @@ from jetrep.core.message import (
 )
 from jetrep.core.handlers import (
     LogHandler,
+    DefaultHandler,
     StateHandler,
-    DefaultHandler
+    NotifyHandler,
 )
 from jetrep.core.tasks import (
     ServiceRPC,
@@ -40,9 +41,9 @@ from jetrep.utils.shell import (
     util_start_service,
     util_stop_service
 )
-from jetrep.constants import DefaultPath
 from jetrep.core.context import PSContext
-
+from jetrep.constants import DefaultPath
+from jetrep.utils.misc import MeldDict
 
 multiprocessing.set_start_method('forkserver', force=True)
 # multiprocessing.set_start_method('spawn', force=True)
@@ -87,9 +88,9 @@ class JetRepApp(Application):
     name = Unicode('JetRepApp')
     description = Unicode(__doc__)
 
-    svc_name_repapi = Unicode('repapi', read_only=True)
+    svc_name_repapi = Unicode('jetapi', read_only=True)
     svc_name_jetgst = Unicode('jetgst', read_only=True)
-    svc_name_srsrtc = Unicode('srsrtc', read_only=True)
+    svc_name_srsrtc = Unicode('jetsrs', read_only=True)
     tsk_name_engine = Unicode(TRTEngineProcess.name, read_only=True)
     tsk_name_prerep = Unicode(TRTPrerepProcess.name, read_only=True)
     tsk_name_postrep = Unicode(TRTPostrepProcess.name, read_only=True)
@@ -154,11 +155,10 @@ class JetRepApp(Application):
 
     def initialize(self, argv=None):
         self.parse_command_line(argv)
+        if os.path.exists(DefaultPath.JETREP_DEF_CONF_PATH):
+            self.config_file = DefaultPath.JETREP_DEF_CONF_PATH
         if self.config_file:
             self.load_config_file(self.config_file)
-        if os.path.exists(DefaultPath.JETREP_CONF_PATH):
-            self.load_config_file(DefaultPath.JETREP_CONF_PATH)
-
         print(self.config)
         # print(self.print_help(classes=True))
 
@@ -166,8 +166,9 @@ class JetRepApp(Application):
         self.log_looper = LogHandlerThread()
         self.main_looper = MainHandlerThread()
 
-        StateHandler.instance(self)
         DefaultHandler.instance(self)
+        StateHandler.instance(self)
+        NotifyHandler.instance(self)
 
         self.native = NativeHandler(self, LogHandler.instance(self))
 
@@ -184,11 +185,18 @@ class JetRepApp(Application):
 
         self.psctx.setup()
 
-    def meld_config_file(self, jfile):
-        if os.path.exists(jfile):
-            self.load_config_file(jfile)
-            self.psctx.update_config(self.config)
-            self.log.debug(self.config)
+    def meld_config_file(self, conf_dict):
+        with open(self.config_file, 'r') as fr:
+            MeldDict.meld_iters = False
+            a = json.load(fr)
+            self.log.error(a)
+            meld_dict = MeldDict(a) + conf_dict
+            self.log.error(meld_dict)
+        with open(self.config_file, 'w') as fw:
+            fw.write(json.dumps(meld_dict, indent=4))
+        self.load_config_file(self.config_file)
+        self.psctx.update_config(self.config)
+        self.log.debug(self.config)
 
     def set_state(self, state):
         self.state = state

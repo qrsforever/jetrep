@@ -15,27 +15,6 @@ from jetrep.core.message import (
 from multiprocessing import Process, Event, Lock
 
 
-class DumpDict(dict):
-    __getattr__ = dict.get
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-
-    def __init__(self, *args, **kwargs):
-        for arg in args:
-            if isinstance(arg, dict):
-                for k, v in arg.items():
-                    self[k] = v
-        if kwargs:
-            for k, v in kwargs.items():
-                self[k] = v
-
-    def __getstate__(self):
-        return self.__dict__
-
-    def __setstate__(self, d):
-        self.__dict__.update(d)
-
-
 class ServiceBase(Process):
 
     def __init__(self, evt_exit, **kwargs):

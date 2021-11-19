@@ -5,7 +5,7 @@ CUR_DIR=$(cd $(dirname ${BASH_SOURCE[0]}); pwd)
 TOP_DIR=$(dirname $CUR_DIR)
 DST_DIR=/etc/systemd/system/
 
-SERVICE=srsrtc.service
+SERVICE=jetsrs.service
 SRS_DIR=/home/nano/srs
 RESTAPI=http://127.0.0.1:80/apis/svc/status
 
@@ -32,7 +32,7 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     Restart=always
     RestartSec=10
     ExecStartPre=-/usr/bin/curl -d '{"name": "srsrtc", "status": "starting"}' $RESTAPI
-    ExecStart=$SRS_DIR/objs/srs -c $TOP_DIR/etc/srsrtc.conf
+    ExecStart=$SRS_DIR/objs/srs -c $TOP_DIR/etc/jetsrs.conf
     ExecStartPost=/bin/sleep 2
     ExecStartPost=-/usr/bin/curl -d '{"name": "srsrtc", "status": "started"}' $RESTAPI
     ExecStopPost=-/usr/bin/curl -d '{"name": "srsrtc", "status": "stopped"}' $RESTAPI
@@ -45,6 +45,7 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     WantedBy=multi-user.target
 EOF
 
+$XRUN systemctl stop $SERVICE
 $XRUN cp $TOP_DIR/etc/systemd/$SERVICE $DST_DIR
 $XRUN systemctl daemon-reload
 if [[ x$1 == x1 ]]

@@ -13,7 +13,9 @@ from jetrep.core.message import (
     ServiceType,
     StateType,
 )
-from .base import ServiceBase, DumpDict
+from .base import ServiceBase
+from jetrep.utils.misc import DotDict
+
 
 DEFAULT_SHM_PATH = '/tmp/gst_repnet.shm'
 
@@ -64,7 +66,7 @@ class TRTPrerepProcess(ServiceBase):
                 remote.loge('Cap read error!')
                 break
             if bucket is None:
-                bucket = DumpDict(remote.get_bucket())
+                bucket = DotDict(remote.get_bucket())
                 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
                 writer = cv2.VideoWriter(bucket.raw_frames_path, fourcc, frame_rate, frame_size)
 
@@ -109,6 +111,7 @@ class TRTPrerepProcess(ServiceBase):
                     bucket.selected_indices.append(bucket.raw_frames_count - 1)
                     bucket.inputs.append(frame_rgb)
                 if len(bucket.selected_indices) == 64:
+                    bucket.end_time = time.time()
                     writer.release(); writer = None # noqa
                     self.mQin.put(bucket)
                     del bucket; bucket = None # noqa

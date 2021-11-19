@@ -1,0 +1,25 @@
+[Unit]
+    Description=JetRep SRS Webrtc Service
+    Documentation=http://jetrep.hzcsai.com
+    After=multi-user.target
+
+[Service]
+    Type=simple
+    User=root
+    Group=root
+    UMask=0000
+    WorkingDirectory=/home/nano/srs
+    Restart=always
+    RestartSec=10
+    ExecStartPre=-/usr/bin/curl -d '{"name": "srsrtc", "status": "starting"}' http://127.0.0.1:80/apis/svc/status
+    ExecStart=/home/nano/srs/objs/srs -c /home/nano/omega/jetson/jetrep/etc/jetsrs.conf
+    ExecStartPost=/bin/sleep 2
+    ExecStartPost=-/usr/bin/curl -d '{"name": "srsrtc", "status": "started"}' http://127.0.0.1:80/apis/svc/status
+    ExecStopPost=-/usr/bin/curl -d '{"name": "srsrtc", "status": "stopped"}' http://127.0.0.1:80/apis/svc/status
+    TimeoutStartSec=10
+    TimeoutStopSec=5
+    StandardOutput=syslog
+    StandardError=syslog
+
+[Install]
+    WantedBy=multi-user.target

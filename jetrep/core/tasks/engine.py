@@ -71,6 +71,7 @@ class TRTEngineProcess(ServiceBase):
                 bucket.within_scores = trt_outputs[0].copy()
                 bucket.period_scores = trt_outputs[1].copy()
 
+                del bucket.inputs
                 self.mQout.put(bucket)
 
             del context, inputs, outputs, bindings, stream

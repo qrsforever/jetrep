@@ -46,6 +46,7 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     WantedBy=multi-user.target
 EOF
 
+$XRUN systemctl stop $SERVICE
 $XRUN cp $TOP_DIR/etc/systemd/$SERVICE $DST_DIR
 $XRUN systemctl daemon-reload
 if [[ x$1 == x1 ]]

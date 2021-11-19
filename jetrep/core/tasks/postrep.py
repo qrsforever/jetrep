@@ -19,6 +19,8 @@ from jetrep.core.message import (
     MessageType,
     ServiceType,
     StateType,
+    NotifyType,
+    PayloadType,
 )
 from .base import ServiceBase
 
@@ -52,7 +54,8 @@ class TRTPostrepProcess(ServiceBase):
             except queue.Empty:
                 continue
             (width, height), rate = bucket.frame_size, bucket.frame_rate
-
+            if bucket.reset_count:
+                sumcount = 0
             if rtmp_url != bucket.rtmp_url:
                 rtmp_url = bucket.rtmp_url
                 gst_str = ' ! '.join(kgst + [
@@ -86,8 +89,14 @@ class TRTPostrepProcess(ServiceBase):
                 s = t
             if os.path.exists(bucket.raw_frames_path):
                 cap = cv2.VideoCapture(bucket.raw_frames_path)
-                frame_counts = np.cumsum(frame_counts) + sumcount
-                for c in frame_counts:
+                frame_rate = int(cap.get(cv2.CAP_PROP_FPS))
+                if frame_rate != bucket.frame_rate:
+                    remote.logw('Conflict frame rate: %d vs %d' % (frame_rate, bucket.frame_rate))
+                bucket.cumsum_per_seconds = [] # np.take(frame_counts, range(len(frame_counts), frame_rate))
+                frame_counts = np.round(np.cumsum(frame_counts), 3)
+                for i, c in enumerate(frame_counts):
+                    if i % frame_rate == 0:
+                        bucket.cumsum_per_seconds.append(c)
                     retval, frame_bgr = cap.read()
                     if not retval:
                         break
@@ -100,15 +109,20 @@ class TRTPostrepProcess(ServiceBase):
 
                     cv2.putText(
                             frame_bgr,
-                            f'{width}x{height} {rate} S:{bucket.stride} A:{bucket.area_thresh} C:{c:.2f}',
+                            f'{width}x{height} {rate} S:{bucket.stride} A:{bucket.area_thresh} C:{c + sumcount:.3f}',
                             (int(0.2 * width), int(0.2 * height)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
                     if writer:
                         writer.write(frame_bgr)
                 else:
-                    sumcount = c
+                    bucket.cumsum_per_seconds.append(c)
+                sumcount += frame_counts[-1]
+
                 cap.release()
             if os.path.exists(bucket.raw_frames_path):
                 os.unlink(bucket.raw_frames_path)
+            del bucket.within_scores, bucket.period_scores
+            del bucket.raw_frames_path, bucket.selected_indices
+            remote.send_message(MessageType.NOTIFY, NotifyType.TO_CLOUD, PayloadType.REP_INFER_RESULT, bucket)
             del bucket
         if writer:
             writer.release()

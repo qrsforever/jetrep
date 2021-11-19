@@ -8,6 +8,8 @@
 # @date 2021-11-11 17:49
 
 import json
+from jetrep.utils.net import util_get_lanip
+from jetrep.utils.misc import DotDict
 from flask import Blueprint, request, Response # noqa
 from flask import current_app as app
 
@@ -15,11 +17,33 @@ api_srs = Blueprint("srs", __name__)
 
 OK = "0" # Response(status=200, headers={})
 
+_Client_Caches_ = {}
+
+
+@api_srs.route('/streams')
+def _srs_streams_list():
+    srsip = util_get_lanip()
+    html = '<html><body><b><p>Streams</p></b><ul>'
+    for client_id, player_url in _Client_Caches_.items():
+        player_url = player_url.replace('0.0.0.0', srsip).replace('127.0.0.1', srsip)
+        html += f'<li><a href={player_url}>{player_url}</a></li>'
+    html += '</ul></body></html>'
+    return html
+
 
 @api_srs.route('/on_connect', methods=['POST', 'PUT'])
 def _srs_on_connect():
     reqjson = json.loads(request.get_data().decode())
     app.logger.info(reqjson)
+    r = DotDict(reqjson)
+    if r.vhost.startswith('jet'):
+        page = 'rtc_player.html'
+        suffix = ''
+    else:
+        page = 'srs_player.html'
+        suffix = '.m3u8'
+    player_url = f'http://127.0.0.1:8080/players/{page}?vhost={r.vhost}&app={r.app}&stream={r.stream}{suffix}&autostart=true'
+    _Client_Caches_[r.client_id] = player_url
     return OK
 
 
@@ -27,6 +51,9 @@ def _srs_on_connect():
 def _srs_on_close():
     reqjson = json.loads(request.get_data().decode())
     app.logger.info(reqjson)
+    r = DotDict(reqjson)
+    if r.client_id in _Client_Caches_:
+        _Client_Caches_.pop(r.client_id)
     return OK
 
 
