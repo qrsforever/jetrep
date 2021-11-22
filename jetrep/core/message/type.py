@@ -72,6 +72,7 @@ class NotifyType(IntEnum):
 
 @unique
 class PayloadType(IntEnum):
+    APP_VERSION_INFO = 1
     REP_INFER_RESULT = 10
 
 

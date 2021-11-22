@@ -20,7 +20,8 @@ from jetrep.api.routers import (
     api_srs,
     api_svc,
     api_sys,
-    api_rep
+    api_rep,
+    api_cron,
 )
 from jetrep.core.message import (
     MessageType,
@@ -36,6 +37,8 @@ app.register_blueprint(api_svc, url_prefix='/apis/svc')
 app.register_blueprint(api_srs, url_prefix='/apis/srs')
 app.register_blueprint(api_sys, url_prefix='/apis/sys')
 app.register_blueprint(api_rep, url_prefix='/apis/rep')
+
+app.register_blueprint(api_cron, url_prefix='/apis/cron')
 
 
 @app.route('/')

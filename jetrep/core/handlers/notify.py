@@ -14,6 +14,7 @@ from jetrep.core.message import (
      NotifyType,
      PayloadType,
 )
+from jetrep.constants import APP_VERSION_INFO
 
 
 class NotifyHandler(MessageHandler):
@@ -21,8 +22,10 @@ class NotifyHandler(MessageHandler):
         super(NotifyHandler, self).__init__(app, keys=[MessageType.NOTIFY, MessageType.QUIT])
 
     def on_cloud_event(self, arg2, obj):
-        if arg2 == PayloadType.REP_INFER_RESULT:
-            # TODO
+        if arg2 == PayloadType.APP_VERSION_INFO:
+            self.app.log.warning(f'Not impl: {APP_VERSION_INFO}')
+            return True
+        elif arg2 == PayloadType.REP_INFER_RESULT:
             self.app.log.warning(f'Not impl: {obj}')
             return True
         return False

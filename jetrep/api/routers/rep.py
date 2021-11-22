@@ -37,3 +37,12 @@ def _rep_reboot():
     if reqjson['username'] == 'jetson' and reqjson['password'] == 'nano':
         app.remote.send_message(MessageType.CTRL, CommandType.APP_RESTART)
     return OK
+
+
+@api_rep.route('/status', methods=['GET']) # TODO don't modify: see crontab/common.sh
+def _rep_status():
+    result = app.remote.get_status()
+    app.logger.info(result)
+    if all(list(result.values())):
+        return "1"
+    return "0"

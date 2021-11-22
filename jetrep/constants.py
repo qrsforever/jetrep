@@ -10,10 +10,16 @@
 import os
 import os.path as osp
 
+APP_VERSION_INFO = {
+    'version': '1.0.0',
+    'datetime': '2021-11-17 18:51'
+}
+
 
 class DefaultPath(object):
     WORKING_DIRECTORY = os.getcwd()
     RUNTIME_DIRECTORY = osp.join(WORKING_DIRECTORY, 'runtime')
+    CRONTAB_DIRECTORY = osp.join(WORKING_DIRECTORY, 'etc', 'crontab')
     JETREP_DEF_CONF_PATH = osp.join(WORKING_DIRECTORY, 'etc', 'jetrep.json')
     JETREP_CONF_PATH = osp.join(RUNTIME_DIRECTORY, 'jetrep.json')
 

@@ -25,5 +25,3 @@ for pid in `ps -eo pid,args | grep "python3 -c from multiprocessing" | cut -c1-6
 do
     $XRUN kill -9 $pid 2>/dev/null
 done
-
-exit 0

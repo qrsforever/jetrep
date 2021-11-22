@@ -21,6 +21,8 @@ from jetrep.core.message import (
     MessageType,
     CommandType,
     ServiceType,
+    NotifyType,
+    PayloadType,
     StateType,
     LogType,
 )
@@ -61,6 +63,9 @@ class NativeHandler(MessageHandler):
         return self.app.psctx.frame_size[0], \
                 self.app.psctx.frame_size[1], \
                 self.app.psctx.frame_rate
+
+    def get_status(self):
+        return self.app.status()
 
     def get_bucket(self):
         return self.app.psctx.make_bucket()
@@ -155,8 +160,8 @@ class JetRepApp(Application):
 
     def initialize(self, argv=None):
         self.parse_command_line(argv)
-        if os.path.exists(DefaultPath.JETREP_DEF_CONF_PATH):
-            self.config_file = DefaultPath.JETREP_DEF_CONF_PATH
+        if os.path.exists(DefaultPath.JETREP_CONF_PATH):
+            self.config_file = DefaultPath.JETREP_CONF_PATH
         if self.config_file:
             self.load_config_file(self.config_file)
         print(self.config)
@@ -210,6 +215,7 @@ class JetRepApp(Application):
         self.log_looper.start()
         self.main_looper.start()
         self.rpc_task.start()
+        self.native.send_message(MessageType.NOTIFY, NotifyType.TO_CLOUD, PayloadType.APP_VERSION_INFO)
         self.native.send_message(MessageType.CTRL, CommandType.APP_START, ServiceType.API)
 
     def restart(self):

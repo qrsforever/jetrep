@@ -5,10 +5,12 @@ from .svc import api_svc
 from .srs import api_srs
 from .sys import api_sys
 from .rep import api_rep
+from .cron import api_cron
 
 __all__ = [
     'api_svc',
     'api_srs',
     'api_sys',
     'api_rep',
+    'api_cron',
 ]

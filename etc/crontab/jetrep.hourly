@@ -1,0 +1,38 @@
+#!/bin/bash
+
+SCRIPTDIR="$(dirname "$0")"
+
+. $SCRIPTDIR/common.sh
+. $SCRIPTDIR/cron.env
+
+###### Update App / Factory Resume ######
+for _ in `seq 3`
+do
+    echo $(rep_status)
+    sleep 1
+done
+
+###### Check Disk Usage ######
+
+str_disk_info=`df -BG --output=avail,pcent $TARGET_DEV | grep -v "Use"`
+avail=`echo $str_disk_info | awk '{len=length($1); print substr($1, 1, len-1)}'`
+pcent=`echo $str_disk_info | awk '{len=length($2); print substr($2, 1, len-1)}'`
+if [ $avail -lt $AVAIL_THRESH ] || [ $pcent -ge $PCENT_THRESH ]
+then
+    dvr_clean_up $DVR_CACHE_DIR
+    clean=true
+else
+    clean=false
+fi
+
+payload="$(cat <<EOF
+{
+    "disk": "$TARGET_DEV",
+    "avail": $avail,
+    "pcent": $pcent,
+    "clean": $clean
+}
+EOF
+)"
+
+msg_report "check_disk" "$payload"

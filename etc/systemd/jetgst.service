@@ -8,8 +8,8 @@
     User=root
     Group=root
     UMask=0000
-    WorkingDirectory=/home/nano/omega/jetson/jetrep
-    EnvironmentFile=/home/nano/omega/jetson/jetrep/etc/jetgst.env
+    WorkingDirectory=/jetrep
+    EnvironmentFile=/jetrep/etc/jetgst.env
     Restart=always
     RestartSec=10
     # ExecStartPre=-/bin/systemctl restart nvargus-daemon
