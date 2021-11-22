@@ -33,6 +33,7 @@
                 "duration": 300
             }
         },
-        "max_duration": 20
+        "max_duration": 20,
+        "reset_count": true
     }
 }
