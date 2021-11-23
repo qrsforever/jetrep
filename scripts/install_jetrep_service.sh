@@ -30,9 +30,10 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     EnvironmentFile=$TOP_DIR/etc/jetrep.env
     Restart=always
     RestartSec=3
-    ExecStartPre=-/bin/bash $TOP_DIR/scripts/stop_services.sh
+    ExecStartPre=-/bin/bash $TOP_DIR/scripts/stop_services.sh 1
     ExecStart=/usr/bin/python3 jetrep/core/main.py -c runtime/jetrep.json
-    ExecStopPost=-/bin/bash $TOP_DIR/scripts/stop_services.sh
+    ExecStopPost=-/bin/bash $TOP_DIR/scripts/stop_services.sh 1
+    KillSignal=SIGINT
     TimeoutStartSec=20
     TimeoutStopSec=30
     StandardOutput=syslog

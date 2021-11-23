@@ -45,6 +45,7 @@ from jetrep.utils.shell import (
     util_stop_service
 )
 from jetrep.core.context import PSContext
+from jetrep.core.event import USBEventMonitor
 from jetrep.constants import DefaultPath
 from jetrep.utils.misc import MeldDict
 
@@ -71,19 +72,39 @@ class NativeHandler(MessageHandler):
     def get_bucket(self):
         return self.app.psctx.make_bucket()
 
-    def logd(self, s):
+    def logd(self, s, remote=False):
+        if not remote:
+            filename = os.path.basename(sys._getframe().f_back.f_code.co_filename)
+            lineno = sys._getframe().f_back.f_lineno
+            s = f'[{os.getpid()}] {filename}:{lineno} --> {s}'
         self.log_handler.send_message(MessageType.LOG, LogType.DEBUG, obj=f'{s}')
 
-    def logi(self, s):
+    def logi(self, s, remote=False):
+        if not remote:
+            filename = os.path.basename(sys._getframe().f_back.f_code.co_filename)
+            lineno = sys._getframe().f_back.f_lineno
+            s = f'[{os.getpid()}] {filename}:{lineno} --> {s}'
         self.log_handler.send_message(MessageType.LOG, LogType.INFO, obj=f'{s}')
 
-    def logw(self, s):
+    def logw(self, s, remote=False):
+        if not remote:
+            filename = os.path.basename(sys._getframe().f_back.f_code.co_filename)
+            lineno = sys._getframe().f_back.f_lineno
+            s = f'[{os.getpid()}] {filename}:{lineno} --> {s}'
         self.log_handler.send_message(MessageType.LOG, LogType.WARNING, obj=f'{s}')
 
-    def loge(self, s):
+    def loge(self, s, remote=False):
+        if not remote:
+            filename = os.path.basename(sys._getframe().f_back.f_code.co_filename)
+            lineno = sys._getframe().f_back.f_lineno
+            s = f'[{os.getpid()}] {filename}:{lineno} --> {s}'
         self.log_handler.send_message(MessageType.LOG, LogType.ERROR, obj=f'{s}')
 
-    def logc(self, s):
+    def logc(self, s, remote=False):
+        if not remote:
+            filename = os.path.basename(sys._getframe().f_back.f_code.co_filename)
+            lineno = sys._getframe().f_back.f_lineno
+            s = f'[{os.getpid()}] {filename}:{lineno} --> {s}'
         self.log_handler.send_message(MessageType.LOG, LogType.CRITICAL, obj=f'{s}')
 
 
@@ -171,25 +192,25 @@ class JetRepApp(Application):
     def setup(self):
         self.log_looper = LogHandlerThread()
         self.main_looper = MainHandlerThread()
-
+        self.native = NativeHandler(self, LogHandler.instance(self))
         DefaultHandler.instance(self)
         StateHandler.instance(self)
         NotifyHandler.instance(self)
 
-        self.native = NativeHandler(self, LogHandler.instance(self))
-
-        self.log.info('Setup Rpc server')
+        self.native.logi('Setup Rpc server')
         self.rpc_task = ServiceRPC(self, self.rpc_ip, self.rpc_port)
 
-        self.log.info('Setup Trt Tasks')
+        self.native.logi('Setup Trt Tasks')
         self.exit, self.mq_in, self.mq_out = Event(), Queue(), Queue()
         self.psctx = PSContext(config=self.config, log=self.log)
         self.tasks = {}
         for cls in (TRTEngineProcess, TRTPrerepProcess, TRTPostrepProcess):
-            self.log.info(f'Setup {cls.name}')
+            self.native.logi(f'Setup {cls.name}')
             self.tasks[cls.name] = cls(self.exit, ip=self.rpc_ip, port=self.rpc_port, mq_in=self.mq_in, mq_out=self.mq_out)
 
         self.psctx.setup()
+
+        self.event_monitor = USBEventMonitor(self.native)
 
     def meld_config_file(self, conf_dict):
         with open(self.config_file, 'r') as fr:
@@ -211,11 +232,12 @@ class JetRepApp(Application):
         return self.state
 
     def start(self):
-        self.log.info('Starting...')
+        self.native.logi('Starting...')
         self.set_state(StateType.STARTING)
         self.log_looper.start()
         self.main_looper.start()
         self.rpc_task.start()
+        self.event_monitor.start()
         self.native.send_message(MessageType.NOTIFY, NotifyType.TO_CLOUD, PayloadType.APP_VERSION_INFO)
         self.native.send_message(MessageType.CTRL, CommandType.APP_START, ServiceType.API)
 
@@ -223,15 +245,16 @@ class JetRepApp(Application):
         return not util_start_service('jetrep', restart=True)
 
     def stop(self):
-        self.log.info('Stopping...')
+        self.native.logi('Stopping...')
         self.set_state(StateType.STOPPING)
         self.exit.set()
+        self.event_monitor.stop()
         self.native.send_message(MessageType.CTRL, CommandType.APP_STOP, ServiceType.RT_INFER_POSTREP)
 
     def wait(self, timeout=20):
         for _ in range(timeout):
             result = self.status()
-            self.log.info(f'Status: [{result}]')
+            self.native.logi(f'Status: [{result}]')
             if not any(list(result.values())):
                 break
             time.sleep(1)
@@ -246,91 +269,93 @@ class JetRepApp(Application):
         return result
 
     def start_trt_postrep(self):
-        self.log.info('Start Trt PostRep')
+        self.native.logi('Start Trt PostRep')
         self.tasks[self.tsk_name_postrep].start()
         return True
 
     def stop_trt_postrep(self):
-        self.log.info('Stop Trt PostRep')
+        self.native.logi('Stop Trt PostRep')
         self.tasks[self.tsk_name_postrep].stop(self.native)
         return True
 
     def start_trt_prerep(self):
-        self.log.info('Start Trt PreRep')
+        self.native.logi('Start Trt PreRep')
         self.tasks[self.tsk_name_prerep].start()
         return True
 
     def stop_trt_prerep(self):
-        self.log.info('Stop Trt PreRep')
+        self.native.logi('Stop Trt PreRep')
         self.tasks[self.tsk_name_prerep].stop(self.native)
         return True
 
     def start_trt_engine(self):
-        self.log.info('Start Trt Engine')
+        self.native.logi('Start Trt Engine')
         self.tasks[self.tsk_name_engine].start()
         return True
 
     def stop_trt_engine(self):
-        self.log.info('Stop Trt Engine')
+        self.native.logi('Stop Trt Engine')
         self.tasks[self.tsk_name_engine].stop(self.native)
         return True
 
     def start_gst_launch(self):
-        self.log.info('Start Gst Launch')
+        self.native.logi('Start Gst Launch')
         if util_check_service(self.svc_name_jetgst):
             util_stop_service(self.svc_name_jetgst)
         return not util_start_service(self.svc_name_jetgst)
 
     def stop_gst_launch(self):
-        self.log.info('Stop Gst Launch')
+        self.native.logi('Stop Gst Launch')
         return not util_stop_service(self.svc_name_jetgst) \
                 if util_check_service(self.svc_name_jetgst) else True
 
     def start_srs_webrtc(self):
-        self.log.info('Start Srs Webrtc')
+        self.native.logi('Start Srs Webrtc')
         return not util_start_service(self.svc_name_srsrtc, True)
 
     def stop_srs_webrtc(self):
-        self.log.info('Stop Srs Webrtc')
+        self.native.logi('Stop Srs Webrtc')
         return not util_stop_service(self.svc_name_srsrtc) \
                 if util_check_service(self.svc_name_srsrtc) else True
 
     def start_api_handler(self):
-        self.log.info('Start Api Handler')
+        self.native.logi('Start Api Handler')
         return not util_start_service(self.svc_name_repapi, True)
 
     def stop_api_handler(self):
-        self.log.info('Stop Api Handler')
+        self.native.logi('Stop Api Handler')
         return not util_stop_service(self.svc_name_repapi) \
                 if util_check_service(self.svc_name_repapi) else True
-
-    def unsetup(self):
-        self.rpc_task.stop()
-        self.rpc_task.join()
 
     def run(self, argv=None):
         try:
             self.initialize(argv)
             self.setup()
             self.start()
-            self.rpc_task.join()
+            self.event_monitor.loop()
+        except KeyboardInterrupt:
+            self.native.logw('JetRep Quit!')
         except Exception:
-            print('!'*70)
-            self.log.error(traceback.format_exc(limit=6))
+            self.native.loge(traceback.format_exc(limit=6))
+        finally:
+            self.stop()
+            self.wait(timeout=25)
+            self.rpc_task.stop()
+            self.rpc_task.join()
+            self.native.logw('JetRepApp End!!!!')
             os._exit(os.EX_OK)
-        self.log.warning('JetRepApp End!!!!')
 
 
-def signal_handler(sig, frame):
-    app.log.info('JetRepApp handle signal: [%d]' % sig)
-    app.stop()
-    app.wait(timeout=25)
-    app.unsetup()
-    os._exit(os.EX_OK)
-
-
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
+# def signal_handler(sig, frame):
+#     app.log.info('JetRepApp handle signal: [%d]' % sig)
+#     app.stop()
+#     app.wait(timeout=25)
+#     time.sleep(1)
+#     os._exit(os.EX_OK)
+# 
+# 
+# signal.signal(signal.SIGINT, signal_handler)
+# signal.signal(signal.SIGTERM, signal_handler)
 
 
 if __name__ == "__main__":

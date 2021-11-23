@@ -1,15 +1,6 @@
 #!/bin/bash
 
-services=('jetapi' 'jetsrs' 'jetgst')
-
-N=$1
-
-if [[ x$N == x ]]
-then
-    N=10
-fi
-
-XRUN=
+services=('jetapi' 'jetsrs' 'jetgst' 'jetrep')
 
 if [[ 0 != $(whoami) ]]
 then
@@ -18,10 +9,20 @@ fi
 
 for s in ${services[@]}
 do
-    $XRUN systemctl stop $s
+    if [[ x$1 == x1 && $s == jetrep ]]
+    then
+        continue
+    fi
+    alive=`systemctl is-active $s`
+    if [[ $alive == active ]]
+    then
+        $XRUN systemctl stop $s
+    fi
 done
 
-for pid in `ps -eo pid,args | grep "python3 -c from multiprocessing" | cut -c1-6`
+for pid in `ps -eo pid,args | grep "c from multiprocessing" | cut -c1-6`
 do
     $XRUN kill -9 $pid 2>/dev/null
 done
+
+exit 0

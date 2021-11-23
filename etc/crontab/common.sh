@@ -18,9 +18,9 @@ debug_init() {
     if [[ -f $BASH_DEBUG_LOGFILE ]]
     then
         logsize=`stat --printf="%s" $BASH_DEBUG_LOGFILE`
-        if [ $logsize -gt 1024000 ]
+        if [ $logsize -gt 6000000 ]
         then
-            rm $BASH_DEBUG_LOGFILE > /dev/null
+            mv $BASH_DEBUG_LOGFILE ${BASH_DEBUG_LOGFILE}.bak
         fi
     fi
 }
@@ -66,11 +66,15 @@ msg_report() {
     curl_post "$2" "$CRON_API/$1"
 }
 
+timer_reminder() {
+    debug_print "$FUNCNAME" $*
+    curl_get "$CRON_API/$1"
+}
+
 rep_status() {
     debug_print "$FUNCNAME" $*
     curl_get "$JREP_API/status"
 }
-
 
 ###### Clean SRS Cache ######
 
@@ -97,4 +101,4 @@ dvr_clean_up() {
     unset rmdirs
 }
 
-debug_init
+# debug_init

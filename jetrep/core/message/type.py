@@ -17,6 +17,7 @@ class MessageType(IntEnum):
     CTRL = 2
     STATE = 3
     NOTIFY = 4
+    TIMER = 5
     QUIT = 99
 
 
@@ -68,6 +69,12 @@ class StateType(IntEnum):
 @unique
 class NotifyType(IntEnum):
     TO_CLOUD = 1
+    USB_MOUNT = 2
+
+
+@unique
+class TimerType(IntEnum):
+    CHECK_UPDATE = 1
 
 
 @unique
@@ -94,6 +101,8 @@ def pretty_format(what, arg1, arg2):
             arg2 = StateType(arg2)
         elif what == MessageType.NOTIFY:
             arg1 = NotifyType(arg1)
+        elif what == MessageType.TIMER:
+            arg1 = TimerType(arg1)
         else:
             return '%d, %d, %d' % (what, arg1, arg2)
         what = MessageType(what)

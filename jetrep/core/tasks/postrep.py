@@ -98,7 +98,7 @@ class TRTPostrepProcess(ServiceBase):
                     if i % frame_rate == 0:
                         bucket.cumsum_per_seconds.append(c)
                     retval, frame_bgr = cap.read()
-                    if not retval:
+                    if not retval or exit.is_set():
                         break
                     if bucket.black_box:
                         bx1, by1, bx2, by2 = bucket.black_box

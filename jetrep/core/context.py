@@ -225,24 +225,24 @@ class RemoteAgent(object):
     def logd(self, s):
         filename = osp.basename(sys._getframe().f_back.f_code.co_filename)
         lineno = sys._getframe().f_back.f_lineno
-        return self.impl.logd(f'[{os.getpid():<6}] {filename}:{lineno} --> {s}')
+        return self.impl.logd(f'[{os.getpid()}] {filename}:{lineno} --> {s}', True)
 
     def logi(self, s):
         filename = osp.basename(sys._getframe().f_back.f_code.co_filename)
         lineno = sys._getframe().f_back.f_lineno
-        return self.impl.logi(f'[{os.getpid():<6}] {filename}:{lineno} --> {s}')
+        return self.impl.logi(f'[{os.getpid()}] {filename}:{lineno} --> {s}', True)
 
     def logw(self, s):
         filename = osp.basename(sys._getframe().f_back.f_code.co_filename)
         lineno = sys._getframe().f_back.f_lineno
-        return self.impl.logw(f'[{os.getpid():<6}] {filename}:{lineno} --> {s}')
+        return self.impl.logw(f'[{os.getpid()}] {filename}:{lineno} --> {s}', True)
 
     def loge(self, s):
         filename = osp.basename(sys._getframe().f_back.f_code.co_filename)
         lineno = sys._getframe().f_back.f_lineno
-        return self.impl.loge(f'[{os.getpid():<6}] {filename}:{lineno} --> {s}')
+        return self.impl.loge(f'[{os.getpid()}] {filename}:{lineno} --> {s}', True)
 
     def logc(self, s):
         filename = osp.basename(sys._getframe().f_back.f_code.co_filename)
         lineno = sys._getframe().f_back.f_lineno
-        return self.impl.logc(f'[{os.getpid():<6}] {filename}:{lineno} --> {s}')
+        return self.impl.logc(f'[{os.getpid()}] {filename}:{lineno} --> {s}', True)

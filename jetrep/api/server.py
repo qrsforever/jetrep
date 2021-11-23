@@ -95,9 +95,14 @@ if __name__ == "__main__":
             server = pywsgi.WSGIServer((args.host, args.port), app)
 
             def shutdown(num, frame):
-                remote.send_message(MessageType.STATE, ServiceType.API, StateType.STOPPED, 'repapi')
+                if app.remote:
+                    try:
+                        app.remote.send_message(MessageType.STATE, ServiceType.API, StateType.STOPPED, 'repapi')
+                        app.remote.close()
+                        app.remote = None
+                    except Exception:
+                        sys.stderr.write('Remote is closed!!!\n')
                 server.stop()
-                remote.close()
                 sys.stderr.write('End!!!\n')
                 sys.stderr.flush()
                 exit(0)
@@ -111,5 +116,5 @@ if __name__ == "__main__":
     except Exception as err:
         sys.stderr.write(f'{err}!\n')
     finally:
-        if remote and server.started:
+        if app.remote and server.started:
             shutdown()

@@ -9,6 +9,7 @@ from .type import (
     StateType,
     NotifyType,
     PayloadType,
+    TimerType,
 )
 from .base import MessageHandler
 from .looper import MainHandlerThread, LogHandlerThread
@@ -20,6 +21,7 @@ __all__ = [
     'ServiceType',
     'StateType',
     'NotifyType',
+    'TimerType',
     'PayloadType',
     'MessageHandler',
     'MainHandlerThread',

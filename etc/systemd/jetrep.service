@@ -12,11 +12,12 @@
     EnvironmentFile=/jetrep/etc/jetrep.env
     Restart=always
     RestartSec=3
-    ExecStartPre=-/bin/bash /jetrep/scripts/stop_services.sh
+    ExecStartPre=-/bin/bash /jetrep/scripts/stop_services.sh 1
     ExecStart=/usr/bin/python3 jetrep/core/main.py -c runtime/jetrep.json
-    ExecStopPost=-/bin/bash /jetrep/scripts/stop_services.sh
-    TimeoutStartSec=30
-    TimeoutStopSec=20
+    ExecStopPost=-/bin/bash /jetrep/scripts/stop_services.sh 1
+    KillSignal=SIGINT
+    TimeoutStartSec=20
+    TimeoutStopSec=30
     StandardOutput=syslog
     StandardError=syslog
 

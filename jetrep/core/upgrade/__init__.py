@@ -11,6 +11,7 @@ import os.path as osp
 from traitlets.config.configurable import Configurable
 from traitlets import Unicode
 import subprocess
+import requests
 from jetrep.constants import DefaultPath
 
 
@@ -22,10 +23,23 @@ class SoftwareUpgrade(Configurable):
     def __init__(self, *args, **kwargs):
         super(SoftwareUpgrade, self).__init__(*args, **kwargs)
 
-    def check_version(self):
+    def check_update(self):
+        '''
+        Request update config file
+        {
+            "version":"xxx.xxx.xxx",
+            "url":"http://xxx.xxx.xxx.zip",
+            "md5":"xxx",
+            "datetime": "xxx",
+            "content":"xxx",
+            "force": false
+        }
+        '''
         if not self.server_main_url:
-            return ''
-        return ''
+            req = requests.get(self.server_main_url, headers={'Content-Type': 'application/json'})
+            if req.status_code == 200:
+                return req.json()
+        return {}
 
     def download(self, remote_url=None):
         pass

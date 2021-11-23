@@ -23,7 +23,13 @@
 3. [Settings for GOP structure(group of pictures)][4]
 
 
+## Other
 
+1. [Pyudev][5]
+    
+    six >= 1.13; pyudev > 0.22
+
+[5]: https://github.com/pyudev/pyudev
 [4]: https://docs.aws.amazon.com/mediaconvert/latest/ug/gop-structure.html
 [3]: https://ottverse.com/i-p-b-frames-idr-keyframes-differences-usecases/
 [2]: https://docs.rocos.io/prod/docs/gstreamer-pipeline-samples#native-camera-peripherals

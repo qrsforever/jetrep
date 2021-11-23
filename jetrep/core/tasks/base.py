@@ -19,7 +19,7 @@ class ServiceBase(Process):
 
     def __init__(self, evt_exit, **kwargs):
         self.exit = evt_exit
-        self.mq_timeout = kwargs.pop('mq_timeout', 3)
+        self.mq_timeout = kwargs.pop('mq_timeout', 2)
         for key, val in kwargs.items():
             setattr(self, key, val)
         super(ServiceBase, self).__init__(name=self.name)

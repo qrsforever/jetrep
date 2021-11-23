@@ -5,12 +5,15 @@ SCRIPTDIR="$(dirname "$0")"
 . $SCRIPTDIR/common.sh
 . $SCRIPTDIR/cron.env
 
+###### Hourly Timer ######
+timer_reminder "check_update"
+
 ###### Update App / Factory Resume ######
-for _ in `seq 3`
-do
-    echo $(rep_status)
-    sleep 1
-done
+# for _ in `seq 3`
+# do
+#     echo $(rep_status)
+#     sleep 1
+# done
 
 ###### Check Disk Usage ######
 
