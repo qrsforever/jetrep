@@ -9,6 +9,7 @@
 
 import sys, os, signal, traceback # noqa
 import logging, time, json
+import shutil
 import traitlets
 import multiprocessing
 from multiprocessing import Event, Queue
@@ -160,8 +161,8 @@ class JetRepApp(Application):
 
     def initialize(self, argv=None):
         self.parse_command_line(argv)
-        if os.path.exists(DefaultPath.JETREP_CONF_PATH):
-            self.config_file = DefaultPath.JETREP_CONF_PATH
+        if not os.path.exists(self.config_file):
+            shutil.copyfile(DefaultPath.JETREP_DEF_CONF_PATH, self.config_file)
         if self.config_file:
             self.load_config_file(self.config_file)
         print(self.config)
@@ -226,13 +227,14 @@ class JetRepApp(Application):
         self.set_state(StateType.STOPPING)
         self.exit.set()
         self.native.send_message(MessageType.CTRL, CommandType.APP_STOP, ServiceType.RT_INFER_POSTREP)
-        for _ in range(20):
+
+    def wait(self, timeout=20):
+        for _ in range(timeout):
             result = self.status()
             self.log.info(f'Status: [{result}]')
             if not any(list(result.values())):
                 break
             time.sleep(1)
-        self.rpc_task.stop()
 
     def status(self):
         result = {}
@@ -302,6 +304,10 @@ class JetRepApp(Application):
         return not util_stop_service(self.svc_name_repapi) \
                 if util_check_service(self.svc_name_repapi) else True
 
+    def unsetup(self):
+        self.rpc_task.stop()
+        self.rpc_task.join()
+
     def run(self, argv=None):
         try:
             self.initialize(argv)
@@ -318,6 +324,8 @@ class JetRepApp(Application):
 def signal_handler(sig, frame):
     app.log.info('JetRepApp handle signal: [%d]' % sig)
     app.stop()
+    app.wait(timeout=25)
+    app.unsetup()
     os._exit(os.EX_OK)
 
 

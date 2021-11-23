@@ -24,8 +24,8 @@ class SoftwareUpgrade(Configurable):
 
     def check_version(self):
         if not self.server_main_url:
-            return False
-        return False
+            return ''
+        return ''
 
     def download(self, remote_url=None):
         pass

@@ -37,11 +37,12 @@ class DefaultHandler(MessageHandler):
         return False
 
     def on_ctrl_stop(self, arg2, obj):
+        if arg2 == ServiceType.API:
+            return self.app.stop_api_handler()
+        if arg2 == ServiceType.SRS:
+            return self.app.stop_srs_webrtc()
         if arg2 == ServiceType.GST:
-            self.app.stop_gst_launch()
-            self.app.stop_srs_webrtc()
-            self.app.stop_api_handler()
-            return True
+            return self.app.stop_gst_launch()
         if arg2 == ServiceType.RT_INFER_ENGINE:
             return self.app.stop_trt_engine()
         if arg2 == ServiceType.RT_INFER_PREREP:
