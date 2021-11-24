@@ -28,7 +28,7 @@ class NotifyHandler(MessageHandler):
         ])
 
     def on_cloud_event(self, arg2, obj):
-        if arg2 == PayloadType.APP_VERSION_INFO:
+        if arg2 == PayloadType.APP_VERSION:
             return True
         elif arg2 == PayloadType.REP_INFER_RESULT:
             return True

@@ -23,7 +23,7 @@ cd $TOP_DIR/..
 
 mkdir -p ota
 
-zip -r ota/update_${APP_VERSION}.zip ${APP_NAME}
+zip -r ota/update_${APP_VERSION}.zip ${APP_NAME} -x@${APP_NAME}/.zipignore
 MD5=`md5sum ota/update_${APP_VERSION}.zip | cut -c1-32`
 
 cat > ota/version_info.json <<EOF

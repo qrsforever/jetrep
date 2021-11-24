@@ -13,7 +13,6 @@ import requests, json
 import shutil
 import subprocess
 from jetrep.constants import DefaultPath as DP
-from jetrep.constants import APP_VERSION_INFO
 from jetrep.core.message import (
     MessageType,
     UpgradeType,
@@ -34,9 +33,10 @@ def compare_version(vnew, vold):
 
 class OtaUpgrade(threading.Thread):
 
-    def __init__(self, native, server_url, conn_timeout, read_timeout):
+    def __init__(self, native, app_version, server_url, conn_timeout, read_timeout):
         super(OtaUpgrade, self).__init__(name='OtaUpgrade', daemon=True)
         self.native = native
+        self.app_version = app_version
         self.server_url = server_url
         self.conn_timeout = conn_timeout
         self.read_timeout = read_timeout
@@ -61,7 +61,7 @@ class OtaUpgrade(threading.Thread):
             if response.status_code == 200:
                 config = response.json()
                 self.native.logi(config)
-                if config.get('force', False) or compare_version(config['version'], APP_VERSION_INFO['version']):
+                if config.get('force', False) or compare_version(config['version'], self.app_version):
                     with open(DP.UPDATE_CONFIG_PATH, 'w') as fw:
                         fw.write(json.dumps(config, indent=4))
                     return config

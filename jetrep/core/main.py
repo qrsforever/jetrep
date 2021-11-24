@@ -242,7 +242,7 @@ class JetRepApp(Application):
         self.main_looper.start()
         self.rpc_task.start()
         self.event_monitor.start()
-        self.native.send_message(MessageType.NOTIFY, NotifyType.TO_CLOUD, PayloadType.APP_VERSION_INFO)
+        self.native.send_message(MessageType.NOTIFY, NotifyType.TO_CLOUD, PayloadType.APP_VERSION)
         self.native.send_message(MessageType.CTRL, CommandType.APP_START, ServiceType.API)
 
     def restart(self):

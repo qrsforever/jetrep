@@ -93,7 +93,7 @@ class UpgradeType(IntEnum):
 @unique
 class PayloadType(IntEnum):
     NOP = -1
-    APP_VERSION_INFO = 1
+    APP_VERSION = 1
     UPGRADE_SUCCESS = 2
     UPGRADE_ERROR = 3
     UNKOWN4 = 4

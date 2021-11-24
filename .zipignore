@@ -1,2 +1,11 @@
-*/.git
-*/third_party
+*.git*
+*.flake8
+*.gitignore
+*.gitmodules
+*.zipignore
+*.ycm_extra_conf_py.py
+*docs*
+*test*
+"webpage"
+*third_party*
+*__pycache__*

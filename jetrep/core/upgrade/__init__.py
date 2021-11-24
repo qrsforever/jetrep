@@ -8,18 +8,25 @@
 # @date 2021-11-22 18:09
 
 from traitlets.config.configurable import Configurable
-from traitlets import Unicode, Float
+from traitlets import Unicode, Float, default
+from jetrep.constants import DefaultPath as DP
 from .ota import OtaUpgrade
 
 
 class SoftwareUpgrade(Configurable):
-    server_url = Unicode('http://172.16.0.35/softu/update_config.json', help='Set upgrade server url').tag(config=True)
+    server_url = Unicode('http://172.16.0.35/jetson/ota/version_info.json', help='Set upgrade server url').tag(config=True)
     conn_timeout = Float(3, help='Set timeout(s) for request connect').tag(config=True)
     read_timeout = Float(3, help='Set timeout(s) for request read payload').tag(config=True)
+    app_version = Unicode('')
 
     def __init__(self, native, *args, **kwargs):
         self.native = native
         super(SoftwareUpgrade, self).__init__(*args, **kwargs)
+
+    @default('app_version')
+    def _app_version(self):
+        with open(DP.APP_VERSION_PATH, 'r') as fr:
+            return fr.read().strip()
 
     def setup(self):
         pass
