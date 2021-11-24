@@ -11,16 +11,21 @@ then
     if [[ ${filename##*.} == "zip" ]]
     then
         cal_md5=`md5sum $zip_path | cut -d\  -f1`
-        zip_md5=`echo ${filename%%.*} | cut -d_ -f2`
-        if [[ ${#zip_md5} != 32 ]]
+        if [[ x$3 == x ]]
         then
-            zip_md5=$cal_md5
+            zip_md5=`echo ${filename%%.*} | cut -d_ -f2`
+            if [[ ${#zip_md5} != 32 ]]
+            then
+                zip_md5=$cal_md5
+            fi
+        else
+            zip_md5=$3
         fi
         if [[ $zip_md5 == $cal_md5 ]]
         then
             unzip -qo $zip_path -d $dst_path/$zip_md5
-            rm -f /jetrep > /dev/null
-            ln -s $dst_path/$zip_md5 /jetrep
+            # rm -f /jetrep > /dev/null
+            # ln -s $dst_path/$zip_md5 /jetrep
             exit 0
         fi
     fi

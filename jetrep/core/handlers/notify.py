@@ -11,28 +11,39 @@
 from jetrep.core.message import MessageHandler
 from jetrep.core.message import (
      MessageType,
+     CommandType,
      NotifyType,
+     TimerType,
+     UpgradeType,
      PayloadType,
 )
-from jetrep.constants import APP_VERSION_INFO
 
 
 class NotifyHandler(MessageHandler):
     def __init__(self, app):
-        super(NotifyHandler, self).__init__(app, keys=[MessageType.NOTIFY, MessageType.TIMER])
+        super(NotifyHandler, self).__init__(app, keys=[
+            MessageType.NOTIFY,
+            MessageType.TIMER,
+            MessageType.UPGRADE,
+        ])
 
     def on_cloud_event(self, arg2, obj):
         if arg2 == PayloadType.APP_VERSION_INFO:
-            self.app.log.warning(f'Not impl: {APP_VERSION_INFO}')
             return True
         elif arg2 == PayloadType.REP_INFER_RESULT:
-            self.app.log.warning(f'Not impl: {obj}')
             return True
         return False
 
     def on_usb_event(self, arg2, obj):
-        if arg2 == 1:
+        if arg2 == PayloadType.MOUNTED: # Mount
             pass
+        return False
+
+    def on_ota_event(self, arg2, obj):
+        if arg2 == PayloadType.UPGRADE_ERROR:
+            pass
+        elif arg2 == PayloadType.UPGRADE_SUCCESS:
+            return self.send_message(MessageType.CTRL, CommandType.APP_RESTART)
         return False
 
     def handle_message(self, what, arg1, arg2, obj):
@@ -44,6 +55,13 @@ class NotifyHandler(MessageHandler):
             return False
 
         if what == MessageType.TIMER:
+            if arg1 == TimerType.CHECK_UPDATE:
+                return self.app.softu.start_ota()
+            return False
+
+        if what == MessageType.UPGRADE:
+            if arg1 == UpgradeType.OTA:
+                return self.on_ota_event()
             return False
 
         return False

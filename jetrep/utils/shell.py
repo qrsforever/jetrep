@@ -15,18 +15,17 @@ def util_check_service(sname):
     try:
         # MainPID
         # status = subprocess.check_output(f'systemctl show -p ActiveState --value {sname}', shell=True)
-        status = subprocess.check_output(f'systemctl is-active {sname}', shell=True)
+        status = subprocess.check_output(f'systemctl is-active {sname}', stderr=subprocess.STDOUT, shell=True)
         if status.decode('utf-8').strip() == 'active':
             return True
-    except Exception:
+    except Exception: 
         return False
     return False
 
 
 def util_start_service(sname, restart=False):
     try:
-        result = subprocess.call(['systemctl', 'restart' if restart else 'start', sname])
-        return result.returncode
+        return subprocess.call(['systemctl', 'restart' if restart else 'start', sname])
     except Exception:
         return -1
     return -1
@@ -34,10 +33,11 @@ def util_start_service(sname, restart=False):
 
 def util_stop_service(sname):
     try:
-        result = subprocess.call(['systemctl', 'stop', sname])
-        return result.returncode
+        return subprocess.check_call(['systemctl', 'stop', sname])
+    except subprocess.CalledProcessError as err:
+        return err.returncode
     except Exception:
-        return -1
+        pass
     return -1
 
 

@@ -48,6 +48,7 @@ from jetrep.core.context import PSContext
 from jetrep.core.event import USBEventMonitor
 from jetrep.constants import DefaultPath
 from jetrep.utils.misc import MeldDict
+from jetrep.core.upgrade import SoftwareUpgrade
 
 multiprocessing.set_start_method('forkserver', force=True)
 # multiprocessing.set_start_method('spawn', force=True)
@@ -128,7 +129,7 @@ class JetRepApp(Application):
     rpc_ip = Unicode('127.0.0.1', help='Set zerorpc host').tag(config=True)
     rpc_port = Int(8181, help='Set zerorpc port').tag(config=True)
 
-    classes = List([PSContext])
+    classes = List([PSContext, SoftwareUpgrade])
 
     aliases = Dict(
         dict(
@@ -202,13 +203,15 @@ class JetRepApp(Application):
 
         self.native.logi('Setup Trt Tasks')
         self.exit, self.mq_in, self.mq_out = Event(), Queue(), Queue()
-        self.psctx = PSContext(config=self.config, log=self.log)
         self.tasks = {}
         for cls in (TRTEngineProcess, TRTPrerepProcess, TRTPostrepProcess):
             self.native.logi(f'Setup {cls.name}')
             self.tasks[cls.name] = cls(self.exit, ip=self.rpc_ip, port=self.rpc_port, mq_in=self.mq_in, mq_out=self.mq_out)
 
+        self.psctx = PSContext(self.native, config=self.config)
         self.psctx.setup()
+        self.softu = SoftwareUpgrade(self.native, config=self.config)
+        self.softu.setup()
 
         self.event_monitor = USBEventMonitor(self.native)
 
@@ -223,7 +226,8 @@ class JetRepApp(Application):
             fw.write(json.dumps(meld_dict, indent=4))
         self.load_config_file(self.config_file)
         self.psctx.update_config(self.config)
-        self.log.debug(self.config)
+        self.softu.update_config(self.config)
+        self.native.logd(self.config)
 
     def set_state(self, state):
         self.state = state

@@ -46,11 +46,11 @@ class USBEventMonitor(object):
         # usb mount
         if os.path.ismount(self.mntdir):
             subprocess.call(['umount', '-l', self.mntdir])
-            self.native.send_message(MessageType.NOTIFY, NotifyType.USB_MOUNT, 0, self.mntdir)
+            self.native.send_message(MessageType.NOTIFY, NotifyType.USB_MOUNT, PayloadType.UNMOUNTED, self.mntdir)
         if device.action == 'add':
             subprocess.call(['mount', device.device_node, self.mntdir])
             if os.path.ismount(self.mntdir):
-                self.native.send_message(MessageType.NOTIFY, NotifyType.USB_MOUNT, 1, self.mntdir)
+                self.native.send_message(MessageType.NOTIFY, NotifyType.USB_MOUNT, PayloadType.MOUNTED, self.mntdir)
 
     def start(self):
         self.usbmon = Monitor.from_netlink(self._context)

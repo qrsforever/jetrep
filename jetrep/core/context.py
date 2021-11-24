@@ -58,7 +58,8 @@ class PSContext(LoggingConfigurable):
 
     F = 64
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, native, *args, **kwargs):
+        self.native = native
         self._focus_box = None
         self._black_box = None
         self._stride = 4
@@ -67,7 +68,6 @@ class PSContext(LoggingConfigurable):
         super(PSContext, self).__init__(*args, **kwargs)
 
     def setup(self):
-        self.log.info(f'{self.make_bucket()}')
         if os.path.exists(self.video_clips_path):
             shutil.rmtree(self.video_clips_path)
         os.makedirs(self.video_clips_path)
@@ -109,7 +109,7 @@ class PSContext(LoggingConfigurable):
         bucket.terminal_time = time.time() + self.max_duration
         bucket.reset_count = self.reset_count
         bucket.rtmp_url = self._rtmp_url
-        self.log.debug(bucket)
+        self.native.logd(bucket)
         if self.reset_count:
             self.reset_count = False
         return bucket
@@ -174,7 +174,7 @@ class PSContext(LoggingConfigurable):
     @traitlets.validate('focus_box')
     def _check_focus_box(self, proposal):
         value = proposal['value']
-        self.log.debug(value)
+        self.native.logd(value)
         if value[0] >= value[2] or value[1] >= value[3]:
             raise traitlets.TraitError(f'focus_box invalid: {value}')
         return value
@@ -182,7 +182,7 @@ class PSContext(LoggingConfigurable):
     @traitlets.validate('black_box')
     def _check_black_box(self, proposal):
         value = proposal['value']
-        self.log.debug(value)
+        self.native.logd(value)
         if value[0] > value[2] or value[1] > value[3]:
             raise traitlets.TraitError(f'Parameter focus_box is invalid: {value}')
         return value
@@ -190,7 +190,7 @@ class PSContext(LoggingConfigurable):
     @traitlets.validate('video_clips_path')
     def _validate_video_clips_path(self, proposal):
         value = proposal['value']
-        self.log.debug(value)
+        self.native.logd(value)
         if not value.endswith('videos'):
             value = os.path.join(value, 'videos')
         os.makedirs(value, exist_ok=True)
@@ -199,7 +199,7 @@ class PSContext(LoggingConfigurable):
     @traitlets.validate('synth_video')
     def _validate_synth_video(self, proposal):
         value = proposal['value']
-        self.log.debug(value)
+        self.native.logd(value)
         try:
             jsonschema.validate(value, self.synth_video_schema)
         except jsonschema.ValidationError as e:

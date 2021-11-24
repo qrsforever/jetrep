@@ -13,26 +13,28 @@ from enum import IntEnum, unique
 
 @unique
 class MessageType(IntEnum):
+    NOP = -1
     LOG = 1
     CTRL = 2
     STATE = 3
     NOTIFY = 4
     TIMER = 5
+    UPGRADE = 6
     QUIT = 99
 
 
 @unique
 class CommandType(IntEnum):
-    NOP = 1
-    APP_START = 2
-    APP_STOP = 3
-    APP_RESTART = 4
-
+    NOP = -1
+    APP_START = 1
+    APP_STOP = 2
+    APP_RESTART = 3
     API_SET_PARAM = 10
 
 
 @unique
 class LogType(IntEnum):
+    NOP = -1
     DEBUG = 1
     INFO = 2
     WARNING = 3
@@ -42,6 +44,7 @@ class LogType(IntEnum):
 
 @unique
 class ServiceType(IntEnum):
+    NOP = -1
     SRS = 1
     GST = 2
     API = 3
@@ -55,42 +58,67 @@ class ServiceType(IntEnum):
 
 @unique
 class StateType(IntEnum):
-    NOP = 1
+    NOP = -1
+    RUNNING = 1
     STARTING = 2
     STARTED = 3
     STOPPING = 4
     STOPPED = 5
     STOPPTIMEOUT = 6
-    RUNNING = 7
 
     CRASHED = 99
 
 
 @unique
 class NotifyType(IntEnum):
+    NOP = -1
     TO_CLOUD = 1
     USB_MOUNT = 2
 
 
 @unique
 class TimerType(IntEnum):
+    NOP = -1
     CHECK_UPDATE = 1
 
 
 @unique
-class PayloadType(IntEnum):
-    APP_VERSION_INFO = 1
-    REP_INFER_RESULT = 10
+class UpgradeType(IntEnum):
+    NOP = -1
+    DEV = 1
+    OTA = 2
+    UDISK = 3
 
 
 @unique
-class EmptyType(IntEnum):
-    NOP = 1
+class PayloadType(IntEnum):
+    NOP = -1
+    APP_VERSION_INFO = 1
+    UPGRADE_SUCCESS = 2
+    UPGRADE_ERROR = 3
+    UNKOWN4 = 4
+    UNKOWN5 = 5
+    UNKOWN6 = 6
+    UNKOWN7 = 7
+    UNKOWN8 = 8
+    UNKOWN9 = 9
+    REP_INFER_RESULT = 10
+    UNKOWN11 = 11
+    UNKOWN12 = 12
+    UNKOWN13 = 13
+    UNKOWN14 = 14
+    UNKOWN15 = 15
+    UNKOWN16 = 16
+    UNKOWN17 = 17
+    UNKOWN18 = 18
+    UNKOWN19 = 19
+    UNKOWN20 = 20
+    MOUNTED = 21
+    UNMOUNTED = 22
 
 
 def pretty_format(what, arg1, arg2):
-    if arg2 < 0:
-        arg2 = EmptyType(1)
+    arg2 = PayloadType(arg2)
     if not isinstance(what, IntEnum):
         if what == MessageType.LOG:
             arg1 = LogType(arg1)
@@ -103,6 +131,8 @@ def pretty_format(what, arg1, arg2):
             arg1 = NotifyType(arg1)
         elif what == MessageType.TIMER:
             arg1 = TimerType(arg1)
+        elif what == MessageType.UPGRADE:
+            arg1 = UpgradeType(arg1)
         else:
             return '%d, %d, %d' % (what, arg1, arg2)
         what = MessageType(what)

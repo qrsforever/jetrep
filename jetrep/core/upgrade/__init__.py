@@ -7,47 +7,27 @@
 # @version 1.0
 # @date 2021-11-22 18:09
 
-import os.path as osp
 from traitlets.config.configurable import Configurable
-from traitlets import Unicode
-import subprocess
-import requests
-from jetrep.constants import DefaultPath
+from traitlets import Unicode, Float
+from .ota import OtaUpgrade
 
 
 class SoftwareUpgrade(Configurable):
+    server_url = Unicode('http://172.16.0.35/softu/update_config.json', help='Set upgrade server url').tag(config=True)
+    conn_timeout = Float(3, help='Set timeout(s) for request connect').tag(config=True)
+    read_timeout = Float(3, help='Set timeout(s) for request read payload').tag(config=True)
 
-    server_main_url = Unicode('').tag(config=True)
-    install_path = Unicode('/var/jetrep/archives').tag(config=True)
-
-    def __init__(self, *args, **kwargs):
+    def __init__(self, native, *args, **kwargs):
+        self.native = native
         super(SoftwareUpgrade, self).__init__(*args, **kwargs)
 
-    def check_update(self):
-        '''
-        Request update config file
-        {
-            "version":"xxx.xxx.xxx",
-            "url":"http://xxx.xxx.xxx.zip",
-            "md5":"xxx",
-            "datetime": "xxx",
-            "content":"xxx",
-            "force": false
-        }
-        '''
-        if not self.server_main_url:
-            req = requests.get(self.server_main_url, headers={'Content-Type': 'application/json'})
-            if req.status_code == 200:
-                return req.json()
-        return {}
-
-    def download(self, remote_url=None):
+    def setup(self):
         pass
 
-    def install(self, zip_path):
-        update_script = osp.join(DefaultPath.CRONTAB_DIRECTORY, 'update.sh')
-        result = subprocess.call(f'{update_script} {zip_path} {self.install_path}', shell=True)
-        return result.returncode
+    def start_ota(self):
+        ota = OtaUpgrade(self.native, self.server_url, self.conn_timeout, self.read_timeout)
+        ota.start()
+        return True
 
 
 __all__ = ["SoftwareUpgrade"]
