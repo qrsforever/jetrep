@@ -5,7 +5,7 @@ CUR_DIR=$(cd $(dirname ${BASH_SOURCE[0]}); pwd)
 TOP_DIR=$(dirname $CUR_DIR)
 DST_DIR=/etc/systemd/system/
 
-SERVICE=jetrep.service
+SERVICE=jetsos.service
 
 XRUN=
 if [[ 0 != $(id -u) ]]
@@ -17,30 +17,17 @@ USER=root
 
 cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
 [Unit]
-    Description=JetRep Main Process
+    Description=JetRep SOS Service
     Documentation=http://jetrep.hzcsai.com
-    StartLimitIntervalSec=120
-    StartLimitBurst=5
-    OnFailure=jetsos.service
     After=multi-user.target
 
 [Service]
-    Type=simple
+    Type=oneshot
     User=$USER
     Group=$USER
     UMask=0000
-    WorkingDirectory=$TOP_DIR
     EnvironmentFile=$TOP_DIR/etc/jetrep.env
-    Restart=always
-    RestartSec=3
-    ExecStartPre=-$TOP_DIR/scripts/stop_services.sh 1
-    ExecStart=/usr/bin/python3 jetrep/core/main.py -c runtime/jetrep.json
-    ExecStopPost=-$TOP_DIR/scripts/stop_services.sh 1
-    KillSignal=SIGINT
-    TimeoutStartSec=20
-    TimeoutStopSec=30
-    StandardOutput=syslog
-    StandardError=syslog
+    ExecStart=$TOP_DIR/scripts/jetrep_recovery.sh
 
 [Install]
     WantedBy=multi-user.target
@@ -51,8 +38,8 @@ $XRUN cp $TOP_DIR/etc/systemd/$SERVICE $DST_DIR
 $XRUN systemctl daemon-reload
 if [[ x$1 == x1 ]]
 then
-    $XRUN systemctl enable $SERVICE
-    $XRUN systemctl restart $SERVICE
+    # $XRUN systemctl enable $SERVICE
+    $XRUN systemctl start $SERVICE
     $XRUN systemctl status $SERVICE
 fi
 journalctl -u $SERVICE --no-pager -n 10

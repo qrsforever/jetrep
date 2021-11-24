@@ -45,13 +45,14 @@ class LogType(IntEnum):
 @unique
 class ServiceType(IntEnum):
     NOP = -1
-    SRS = 1
-    GST = 2
-    API = 3
+    APP = 1
+    SRS = 2
+    GST = 3
+    API = 4
 
-    RT_INFER_ENGINE = 4
-    RT_INFER_PREREP = 5
-    RT_INFER_POSTREP = 6
+    RT_INFER_ENGINE = 5
+    RT_INFER_PREREP = 6
+    RT_INFER_POSTREP = 7
 
     ALL = 99
 
@@ -72,8 +73,9 @@ class StateType(IntEnum):
 @unique
 class NotifyType(IntEnum):
     NOP = -1
-    TO_CLOUD = 1
-    USB_MOUNT = 2
+    APP_CONF = 1
+    TO_CLOUD = 2
+    USB_MOUNT = 3
 
 
 @unique
@@ -96,8 +98,8 @@ class PayloadType(IntEnum):
     APP_VERSION = 1
     UPGRADE_SUCCESS = 2
     UPGRADE_ERROR = 3
-    UNKOWN4 = 4
-    UNKOWN5 = 5
+    CONFIG_UPDATE = 4
+    CONFIG_VALID = 5
     UNKOWN6 = 6
     UNKOWN7 = 7
     UNKOWN8 = 8
@@ -118,7 +120,6 @@ class PayloadType(IntEnum):
 
 
 def pretty_format(what, arg1, arg2):
-    arg2 = PayloadType(arg2)
     if not isinstance(what, IntEnum):
         if what == MessageType.LOG:
             arg1 = LogType(arg1)
@@ -135,6 +136,8 @@ def pretty_format(what, arg1, arg2):
             arg1 = UpgradeType(arg1)
         else:
             return '%d, %d, %d' % (what, arg1, arg2)
+        if not isinstance(arg2, IntEnum):
+            arg2 = PayloadType(arg2)
         what = MessageType(what)
     return '%s, %s, %s' % (what, arg1, arg2)
         

@@ -55,7 +55,7 @@ class OtaUpgrade(threading.Thread):
         }
         '''
         if self.server_url:
-            response = requests.get(self.server_url,
+            response = requests.get(self.server_url + '/version_info.json',
                     headers={'Content-Type': 'application/json'},
                     timeout=(self.conn_timeout, self.read_timeout))
             if response.status_code == 200:
@@ -65,6 +65,8 @@ class OtaUpgrade(threading.Thread):
                     with open(DP.UPDATE_CONFIG_PATH, 'w') as fw:
                         fw.write(json.dumps(config, indent=4))
                     return config
+                else:
+                    self.native.logw(f'version: {self.app_version} vs {config["version"]}')
             else:
                 self.native.loge('Request update config [%s] error!' % self.server_url)
         return None
@@ -77,6 +79,8 @@ class OtaUpgrade(threading.Thread):
             self.native.logi('Finish OtaUpgrade Thread (update is not needed)')
             return
         zip_url = update_config['url']
+        if not zip_url.startswith('http'):
+            zip_url = f'{self.server_url}/{update_config["url"]}'
         zip_md5 = update_config['md5']
         dst_dir = f'{DP.UPDATE_INSTALL_PATH}/{update_config["version"]}'
         try:

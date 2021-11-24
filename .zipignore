@@ -6,6 +6,6 @@
 *.ycm_extra_conf_py.py
 *docs*
 *test*
-"webpage"
+*webpage*
 *third_party*
 *__pycache__*

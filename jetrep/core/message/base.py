@@ -53,9 +53,12 @@ class MessageHandler(metaclass=abc.ABCMeta):
     def dispatch_message(self, msg):
         if msg.what != 1: # LOG
             self.log.info(msg)
-        if msg.callback:
-            return msg.callback.handle_message(msg.what, msg.arg1, msg.arg2, msg.obj)
-        return self.handle_message(msg.what, msg.arg1, msg.arg2, msg.obj)
+        try:
+            if msg.callback:
+                return msg.callback.handle_message(msg.what, msg.arg1, msg.arg2, msg.obj)
+            return self.handle_message(msg.what, msg.arg1, msg.arg2, msg.obj)
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":

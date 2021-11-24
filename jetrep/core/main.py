@@ -228,6 +228,7 @@ class JetRepApp(Application):
         self.psctx.update_config(self.config)
         self.softu.update_config(self.config)
         self.native.logd(self.config)
+        self.native.send_message(MessageType.NOTIFY, NotifyType.APP_CONF, PayloadType.CONFIG_UPDATE)
 
     def set_state(self, state):
         self.state = state

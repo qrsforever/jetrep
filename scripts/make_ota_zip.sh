@@ -19,6 +19,9 @@ APP_VERSION=${VER_MAJOR_NUM}.${VER_MINOR_NUM}.${GIT_NUMBER}
 
 echo -n "${APP_VERSION}" > $TOP_DIR/version.txt
 
+chmod +x $TOP_DIR/etc/crontab/* -R
+chmod +x $TOP_DIR/scripts/* -R
+
 cd $TOP_DIR/..
 
 mkdir -p ota
@@ -31,6 +34,7 @@ cat > ota/version_info.json <<EOF
     "version": "${APP_VERSION}",
     "datetime": "${DATETIME}",
     "compatible": true,
+    "url": "update_${APP_VERSION}.zip",
     "force": false,
     "md5": "${MD5}",
     "content": "This is the ota update zip content",
