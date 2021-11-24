@@ -11,6 +11,7 @@ from traitlets.config.configurable import Configurable
 from traitlets import Unicode, Float, default
 from jetrep.constants import DefaultPath as DP
 from .ota import OtaUpgrade
+from .udisk import UDiskUpgrade
 
 
 class SoftwareUpgrade(Configurable):
@@ -34,6 +35,11 @@ class SoftwareUpgrade(Configurable):
     def start_ota(self):
         ota = OtaUpgrade(self.native, self.app_version, self.server_url, self.conn_timeout, self.read_timeout)
         ota.start()
+        return True
+
+    def start_udisk(self, mntdir):
+        udisk = UDiskUpgrade(self.native, mntdir)
+        udisk.start()
         return True
 
 

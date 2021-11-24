@@ -8,8 +8,8 @@
     User=root
     Group=root
     UMask=0000
-    EnvironmentFile=/jetrep/etc/jetrep.env
-    ExecStart=/jetrep/scripts/jetrep_recovery.sh
+    EnvironmentFile=/home/nano/omega/jetson/jetrep/etc/jetrep.env
+    ExecStart=/home/nano/omega/jetson/jetrep/scripts/jetrep_recovery.sh
 
 [Install]
     WantedBy=multi-user.target

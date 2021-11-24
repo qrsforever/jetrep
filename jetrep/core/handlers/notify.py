@@ -9,6 +9,7 @@
 
 
 import os
+import shutil
 from jetrep.core.message import MessageHandler
 from jetrep.constants import DefaultPath as DP
 from jetrep.core.message import (
@@ -29,14 +30,18 @@ class NotifyHandler(MessageHandler):
             MessageType.UPGRADE,
         ])
         self.config_is_valid = False
+        self.test_max_duration = 30
 
     def on_conf_event(self, arg2, obj):
         if arg2 == PayloadType.CONFIG_VALID:
+            self.app.psctx.max_duration = self.test_max_duration
             if not os.path.exists(DP.CONFIG_VALID_NOD):
                 os.mknod(DP.CONFIG_VALID_NOD)
             self.config_is_valid = True
             return True
-        if arg2 == PayloadType.CONFIG_UPDATE:
+        if arg2 in (PayloadType.CONFIG_UPDATE, PayloadType.CONFIG_LOADED):
+            self.test_max_duration = self.app.psctx.max_duration
+            self.app.psctx.max_duration = 5
             if os.path.exists(DP.CONFIG_VALID_NOD):
                 os.remove(DP.CONFIG_VALID_NOD)
             self.config_is_valid = False
@@ -54,15 +59,21 @@ class NotifyHandler(MessageHandler):
 
     def on_usb_event(self, arg2, obj):
         if arg2 == PayloadType.MOUNTED: # Mount
-            pass
+            return self.app.softu.start_udisk(obj)
         return False
 
-    def on_ota_event(self, arg2, obj):
+    def on_upgrade_event(self, arg2, obj):
         if arg2 == PayloadType.UPGRADE_ERROR:
             pass
         elif arg2 == PayloadType.UPGRADE_SUCCESS:
+            self.do_version_archives()
             return self.send_message(MessageType.CTRL, CommandType.APP_RESTART)
         return False
+
+    def do_version_archives(self):
+        archives = sorted(os.listdir(DP.UPDATE_INSTALL_PATH), reverse=True)
+        for oldver in archives[5:]:
+            shutil.rmtree(os.path.join(DP.UPDATE_INSTALL_PATH, oldver))
 
     def handle_message(self, what, arg1, arg2, obj):
         if what == MessageType.NOTIFY:
@@ -80,8 +91,8 @@ class NotifyHandler(MessageHandler):
             return False
 
         if what == MessageType.UPGRADE:
-            if arg1 == UpgradeType.OTA:
-                return self.on_ota_event(arg2, obj)
+            if arg1 in (UpgradeType.OTA, UpgradeType.UDISK):
+                return self.on_upgrade_event(arg2, obj)
             return False
 
         return False

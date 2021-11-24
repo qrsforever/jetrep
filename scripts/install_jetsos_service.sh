@@ -14,6 +14,7 @@ then
 fi
 
 USER=root
+ROOT_DIR=/jetrep
 
 cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
 [Unit]
@@ -26,8 +27,8 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     User=$USER
     Group=$USER
     UMask=0000
-    EnvironmentFile=$TOP_DIR/etc/jetrep.env
-    ExecStart=$TOP_DIR/scripts/jetrep_recovery.sh
+    EnvironmentFile=$ROOT_DIR/etc/jetrep.env
+    ExecStart=$ROOT_DIR/scripts/jetrep_recovery.sh
 
 [Install]
     WantedBy=multi-user.target

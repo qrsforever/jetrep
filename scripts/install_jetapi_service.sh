@@ -15,6 +15,7 @@ then
 fi
 
 USER=root
+ROOT_DIR=/jetrep
 
 cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
 [Unit]
@@ -27,8 +28,8 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     User=$USER
     Group=$USER
     UMask=0000
-    WorkingDirectory=$TOP_DIR
-    Environment="PYTHONPATH=$TOP_DIR"
+    WorkingDirectory=$ROOT_DIR
+    Environment="PYTHONPATH=$ROOT_DIR"
     Restart=always
     RestartSec=5
     ExecStart=/usr/bin/python3 jetrep/api/server.py --host 0.0.0.0 --port 80 --rpc_host 127.0.0.1 --rpc_port 8181

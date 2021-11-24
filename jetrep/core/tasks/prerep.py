@@ -97,7 +97,7 @@ class TRTPrerepProcess(ServiceBase):
             else:
                 keep_flag += 1
 
-            current_time = time.time()
+            current_time = int(time.time())
             if keep_flag % bucket.stride == 0 or current_time > bucket.terminal_time:
                 frame_bgr = cv2.resize(frame_bgr, (112, 112))
                 frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)

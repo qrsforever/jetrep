@@ -57,8 +57,8 @@ class MessageHandler(metaclass=abc.ABCMeta):
             if msg.callback:
                 return msg.callback.handle_message(msg.what, msg.arg1, msg.arg2, msg.obj)
             return self.handle_message(msg.what, msg.arg1, msg.arg2, msg.obj)
-        except Exception:
-            pass
+        except Exception as err:
+            self.log.info(f'{err}')
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ then
 fi
 
 USER=root
+ROOT_DIR=/jetrep
 
 cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
 [Unit]
@@ -27,8 +28,8 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     User=$USER
     Group=$USER
     UMask=0000
-    WorkingDirectory=$TOP_DIR
-    EnvironmentFile=$TOP_DIR/etc/jetgst.env
+    WorkingDirectory=$ROOT_DIR
+    EnvironmentFile=$ROOT_DIR/etc/jetgst.env
     Restart=always
     RestartSec=10
     # ExecStartPre=-/bin/systemctl restart nvargus-daemon

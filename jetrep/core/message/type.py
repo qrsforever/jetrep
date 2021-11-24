@@ -100,7 +100,7 @@ class PayloadType(IntEnum):
     UPGRADE_ERROR = 3
     CONFIG_UPDATE = 4
     CONFIG_VALID = 5
-    UNKOWN6 = 6
+    CONFIG_LOADED = 6
     UNKOWN7 = 7
     UNKOWN8 = 8
     UNKOWN9 = 9

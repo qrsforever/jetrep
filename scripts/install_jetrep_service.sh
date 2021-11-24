@@ -14,13 +14,14 @@ then
 fi
 
 USER=root
+ROOT_DIR=/jetrep
 
 cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
 [Unit]
     Description=JetRep Main Process
     Documentation=http://jetrep.hzcsai.com
-    StartLimitIntervalSec=120
-    StartLimitBurst=5
+    StartLimitIntervalSec=30
+    StartLimitBurst=2
     OnFailure=jetsos.service
     After=multi-user.target
 
@@ -29,13 +30,13 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     User=$USER
     Group=$USER
     UMask=0000
-    WorkingDirectory=$TOP_DIR
-    EnvironmentFile=$TOP_DIR/etc/jetrep.env
+    WorkingDirectory=$ROOT_DIR
+    EnvironmentFile=$ROOT_DIR/etc/jetrep.env
     Restart=always
     RestartSec=3
-    ExecStartPre=-$TOP_DIR/scripts/stop_services.sh 1
+    ExecStartPre=-$ROOT_DIR/scripts/stop_services.sh 1
     ExecStart=/usr/bin/python3 jetrep/core/main.py -c runtime/jetrep.json
-    ExecStopPost=-$TOP_DIR/scripts/stop_services.sh 1
+    ExecStopPost=-$ROOT_DIR/scripts/stop_services.sh 1
     KillSignal=SIGINT
     TimeoutStartSec=20
     TimeoutStopSec=30

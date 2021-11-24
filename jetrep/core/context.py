@@ -79,7 +79,7 @@ class PSContext(LoggingConfigurable):
 
         def __init__(self, video_clips_path, *args, **kwargs):
             super(PSContext.FBucket, self).__init__(*args, **kwargs)
-            self.start_time = int(time.time() * 1000)
+            self.start_time = int(time.time())
             self.raw_frames_count = 0
             self.raw_frames_path = f'{video_clips_path}/{self.start_time}.mp4'
             self.inputs = []
@@ -106,7 +106,7 @@ class PSContext(LoggingConfigurable):
         bucket.black_box = self._black_box
         bucket.stride = self._stride
         bucket.area_thresh = self._area_thresh
-        bucket.terminal_time = time.time() + self.max_duration
+        bucket.terminal_time = bucket.start_time + self.max_duration
         bucket.reset_count = self.reset_count
         bucket.rtmp_url = self._rtmp_url
         self.native.logd(bucket)

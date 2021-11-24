@@ -202,12 +202,11 @@ class JetRepApp(Application):
         self.rpc_task = ServiceRPC(self, self.rpc_ip, self.rpc_port)
 
         self.native.logi('Setup Trt Tasks')
-        self.exit, self.mq_in, self.mq_out = Event(), Queue(), Queue()
+        self.app_exit, self.mq_in, self.mq_out = Event(), Queue(), Queue()
         self.tasks = {}
         for cls in (TRTEngineProcess, TRTPrerepProcess, TRTPostrepProcess):
             self.native.logi(f'Setup {cls.name}')
-            self.tasks[cls.name] = cls(self.exit, ip=self.rpc_ip, port=self.rpc_port, mq_in=self.mq_in, mq_out=self.mq_out)
-
+            self.tasks[cls.name] = cls(self.app_exit, ip=self.rpc_ip, port=self.rpc_port, mq_in=self.mq_in, mq_out=self.mq_out)
         self.psctx = PSContext(self.native, config=self.config)
         self.psctx.setup()
         self.softu = SoftwareUpgrade(self.native, config=self.config)
@@ -243,6 +242,7 @@ class JetRepApp(Application):
         self.main_looper.start()
         self.rpc_task.start()
         self.event_monitor.start()
+        self.native.send_message(MessageType.NOTIFY, NotifyType.APP_CONF, PayloadType.CONFIG_LOADED)
         self.native.send_message(MessageType.NOTIFY, NotifyType.TO_CLOUD, PayloadType.APP_VERSION)
         self.native.send_message(MessageType.CTRL, CommandType.APP_START, ServiceType.API)
 
@@ -252,7 +252,7 @@ class JetRepApp(Application):
     def stop(self):
         self.native.logi('Stopping...')
         self.set_state(StateType.STOPPING)
-        self.exit.set()
+        self.app_exit.set()
         self.event_monitor.stop()
         self.native.send_message(MessageType.CTRL, CommandType.APP_STOP, ServiceType.RT_INFER_POSTREP)
 

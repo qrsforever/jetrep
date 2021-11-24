@@ -22,7 +22,7 @@ class DefaultPath(object):
     JETREP_DEF_CONF_PATH = osp.join(WORKING_DIRECTORY, 'etc', 'jetrep.json')
     JETREP_CONF_PATH = osp.join(RUNTIME_DIRECTORY, 'jetrep.json')
 
-    CONFIG_VALID_NOD = osp.join(RUNTIME_DIRECTORY, 'SUCCESS')
+    CONFIG_VALID_NOD = osp.join(RUNTIME_DIRECTORY, 'SUCCESS') # TODO Don't modify used in scripts
 
     VIDEO_CLIPS_PATH = osp.join(RUNTIME_DIRECTORY, 'videos')
 

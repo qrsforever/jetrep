@@ -35,7 +35,7 @@ cat > ota/version_info.json <<EOF
     "datetime": "${DATETIME}",
     "compatible": true,
     "url": "update_${APP_VERSION}.zip",
-    "force": false,
+    "force": true,
     "md5": "${MD5}",
     "content": "This is the ota update zip content",
     "git_version": "${GIT_VERSION}",

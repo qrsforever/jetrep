@@ -25,4 +25,7 @@ do
     $XRUN kill -9 $pid 2>/dev/null
 done
 
-exit 0
+if [[ $0 == ${BASH_SOURCE[0]} ]]
+then
+    exit 0
+fi

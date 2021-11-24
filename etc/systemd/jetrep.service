@@ -1,6 +1,9 @@
 [Unit]
     Description=JetRep Main Process
     Documentation=http://jetrep.hzcsai.com
+    StartLimitIntervalSec=30
+    StartLimitBurst=2
+    OnFailure=jetsos.service
     After=multi-user.target
 
 [Service]
@@ -12,9 +15,9 @@
     EnvironmentFile=/jetrep/etc/jetrep.env
     Restart=always
     RestartSec=3
-    ExecStartPre=-/bin/bash /jetrep/scripts/stop_services.sh 1
+    ExecStartPre=-/jetrep/scripts/stop_services.sh 1
     ExecStart=/usr/bin/python3 jetrep/core/main.py -c runtime/jetrep.json
-    ExecStopPost=-/bin/bash /jetrep/scripts/stop_services.sh 1
+    ExecStopPost=-/jetrep/scripts/stop_services.sh 1
     KillSignal=SIGINT
     TimeoutStartSec=20
     TimeoutStopSec=30
