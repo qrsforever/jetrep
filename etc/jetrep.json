@@ -7,6 +7,11 @@
         "rpc_ip": "127.0.0.1",
         "rpc_port": 8181
     },
+    "SoftwareUpgrade": {
+        "server_url": "http://172.16.0.35/jetson/ota",
+        "conn_timeout": 5,
+        "read_timeout": 5
+    },
     "PSContext": {
         "focus_box": [
             0.2,

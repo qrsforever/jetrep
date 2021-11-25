@@ -12,7 +12,7 @@ import os.path as osp
 
 
 class DefaultPath(object):
-    WORKING_DIRECTORY = os.getcwd()
+    WORKING_DIRECTORY = '/jetrep' # os.getcwd()
     APP_NAME = os.path.basename(WORKING_DIRECTORY)
     APP_LINK = f'/{APP_NAME}'
     RUNTIME_NAME = 'runtime'

@@ -30,7 +30,7 @@ class SoftwareUpgrade(Configurable):
             return fr.read().strip()
 
     def setup(self):
-        pass
+        self.native.logd(f'server_url: {self.server_url}, timeout:({self.conn_timeout}, {self.read_timeout})')
 
     def start_ota(self):
         ota = OtaUpgrade(self.native, self.app_version, self.server_url, self.conn_timeout, self.read_timeout)

@@ -46,7 +46,7 @@ from jetrep.utils.shell import (
 )
 from jetrep.core.context import PSContext
 from jetrep.core.event import USBEventMonitor
-from jetrep.constants import DefaultPath
+from jetrep.constants import DefaultPath as DP
 from jetrep.utils.misc import MeldDict
 from jetrep.core.upgrade import SoftwareUpgrade
 
@@ -184,7 +184,7 @@ class JetRepApp(Application):
     def initialize(self, argv=None):
         self.parse_command_line(argv)
         if not os.path.exists(self.config_file):
-            shutil.copyfile(DefaultPath.JETREP_DEF_CONF_PATH, self.config_file)
+            shutil.copyfile(DP.JETREP_DEF_CONF_PATH, self.config_file)
         if self.config_file:
             self.load_config_file(self.config_file)
         print(self.config)
@@ -214,20 +214,29 @@ class JetRepApp(Application):
 
         self.event_monitor = USBEventMonitor(self.native)
 
-    def meld_config_file(self, conf_dict):
-        with open(self.config_file, 'r') as fr:
-            MeldDict.meld_iters = False
-            a = json.load(fr)
-            self.log.error(a)
-            meld_dict = MeldDict(a) + conf_dict
-            self.log.error(meld_dict)
-        with open(self.config_file, 'w') as fw:
-            fw.write(json.dumps(meld_dict, indent=4))
-        self.load_config_file(self.config_file)
+    def app_update_config(self, config_file):
+        self.load_config_file(config_file)
         self.psctx.update_config(self.config)
         self.softu.update_config(self.config)
         self.native.logd(self.config)
         self.native.send_message(MessageType.NOTIFY, NotifyType.APP_CONF, PayloadType.CONFIG_UPDATE)
+
+    def reset_config_file(self):
+        shutil.copyfile(DP.JETREP_DEF_CONF_PATH, self.config_file)
+        self.app_update_config(self.config_file)
+        return True
+
+    def meld_config_file(self, conf_dict):
+        with open(self.config_file, 'r') as fr:
+            MeldDict.meld_iters = False
+            conf = json.load(fr)
+            self.log.error(conf)
+            meld_dict = MeldDict(conf) + conf_dict
+            self.log.error(meld_dict)
+        with open(self.config_file, 'w') as fw:
+            fw.write(json.dumps(meld_dict, indent=4))
+        self.app_update_config(self.config_file)
+        return True
 
     def set_state(self, state):
         self.state = state

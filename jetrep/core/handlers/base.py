@@ -53,14 +53,16 @@ class DefaultHandler(MessageHandler):
 
     def handle_message(self, what, arg1, arg2, obj):
         if what == MessageType.CTRL:
-            if arg1 == CommandType.API_SET_PARAM:
-                return self.app.meld_config_file(obj)
             if arg1 == CommandType.APP_START:
                 return self.on_ctrl_start(arg2, obj)
             if arg1 == CommandType.APP_STOP:
                 return self.on_ctrl_stop(arg2, obj)
             if arg1 == CommandType.APP_RESTART:
                 return self.app.restart()
+            if arg1 == CommandType.API_SET_PARAM:
+                return self.app.meld_config_file(obj)
+            if arg1 == CommandType.API_RESET_PARAM:
+                return self.app.reset_config_file()
         return False
 
     @staticmethod

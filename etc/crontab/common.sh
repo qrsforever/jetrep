@@ -11,10 +11,9 @@ fi
 
 ##### Debug ######
 BASH_DEBUG_LOGFILE=/tmp/jetrep_cron.log
-ENABLE_DEBUG=0
+ENABLE_DEBUG=1
 
-debug_init() {
-    ENABLE_DEBUG=1
+debug_check_logfile() {
     if [[ -f $BASH_DEBUG_LOGFILE ]]
     then
         logsize=`stat --printf="%s" $BASH_DEBUG_LOGFILE`
@@ -101,4 +100,4 @@ dvr_clean_up() {
     unset rmdirs
 }
 
-# debug_init
+debug_check_logfile

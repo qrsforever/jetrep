@@ -30,6 +30,12 @@ def _rep_set_param():
     return OK
 
 
+@api_rep.route('/reset_param', methods=['GET'])
+def _rep_reset_param():
+    app.remote.send_message(MessageType.CTRL, CommandType.API_RESET_PARAM) 
+    return OK
+
+
 @api_rep.route('/restart', methods=['POST'])
 def _rep_reboot():
     reqjson = request.get_json()

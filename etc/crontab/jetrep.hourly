@@ -8,13 +8,6 @@ SCRIPTDIR="$(dirname "$0")"
 ###### Hourly Timer ######
 timer_reminder "check_update"
 
-###### Update App / Factory Resume ######
-# for _ in `seq 3`
-# do
-#     echo $(rep_status)
-#     sleep 1
-# done
-
 ###### Check Disk Usage ######
 
 str_disk_info=`df -BG --output=avail,pcent $TARGET_DEV | grep -v "Use"`

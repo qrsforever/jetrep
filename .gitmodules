@@ -1,3 +1,6 @@
 [submodule "pyudev"]
 	path = third_party/pyudev
 	url = https://github.com/pyudev/pyudev.git
+[submodule "create_ap"]
+	path = third_party/create_ap
+	url = https://github.com/oblique/create_ap.git

@@ -30,6 +30,7 @@ class CommandType(IntEnum):
     APP_STOP = 2
     APP_RESTART = 3
     API_SET_PARAM = 10
+    API_RESET_PARAM = 11
 
 
 @unique

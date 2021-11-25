@@ -20,8 +20,8 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
 [Unit]
     Description=JetRep Main Process
     Documentation=http://jetrep.hzcsai.com
-    StartLimitIntervalSec=30
-    StartLimitBurst=2
+    StartLimitIntervalSec=60
+    StartLimitBurst=3
     OnFailure=jetsos.service
     After=multi-user.target
 

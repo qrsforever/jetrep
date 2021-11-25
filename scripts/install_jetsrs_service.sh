@@ -6,7 +6,7 @@ TOP_DIR=$(dirname $CUR_DIR)
 DST_DIR=/etc/systemd/system/
 
 SERVICE=jetsrs.service
-SRS_DIR=/home/nano/srs
+SRS_DIR=/usr/local/srs
 RESTAPI=http://127.0.0.1:80/apis/svc/status
 
 XRUN=

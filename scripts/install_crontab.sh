@@ -2,7 +2,7 @@
 
 CUR_DIR=$(cd $(dirname ${BASH_SOURCE[0]}); pwd)
 TOP_DIR=$(dirname $CUR_DIR)
-CRONTAB_DIR=${TOP_DIR}/etc/crontab
+CRONTAB_DIR=/jetrep/etc/crontab
 
 XRUN=
 if [[ 0 != $(id -u) ]]
@@ -20,7 +20,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 47 6	* * 7	root	test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )
 52 6	1 * *	root	test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )
 
-17 *	* * *	root    test -x $CRONTAB_DIR/jetrep.hourly && $CRONTAB_DIR/jetrep.hourly 
+17 *	* * *	root    test -x $CRONTAB_DIR/jetrep.hourly && $CRONTAB_DIR/jetrep.hourly
 
 @reboot root test -x $CRONTAB_DIR/reboot && $CRONTAB_DIR/reboot
 EOF
