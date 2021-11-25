@@ -29,6 +29,7 @@ class GElement(LoggingConfigurable):
 
     @traitlets.default('uuid')
     def _default_uuid(self):
+        # uuid.uuid1()
         return uuid.UUID(int=uuid.getnode()).hex[-12:]
 
     def gst_str(self):

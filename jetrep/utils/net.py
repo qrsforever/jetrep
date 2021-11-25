@@ -33,5 +33,19 @@ def util_get_lanip():
     return val
 
 
+def util_ping_request(host="8.8.8.8", port=53, timeout=1):
+    try:
+        def_timeout = socket.getdefaulttimeout()
+        socket.setdefaulttimeout(timeout)
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((host, port))
+        s.close()
+        return True
+    except OSError:
+        return False
+    finally:
+        socket.setdefaulttimeout(def_timeout)
+
+
 def util_get_uuid():
-    return uuid.UUID(int=uuid.getnode()).hex[-12:]
+    return uuid.uuid1().hex[-12:]

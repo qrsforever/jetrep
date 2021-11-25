@@ -16,6 +16,7 @@ class DefaultPath(object):
     APP_NAME = os.path.basename(WORKING_DIRECTORY)
     APP_LINK = f'/{APP_NAME}'
     RUNTIME_NAME = 'runtime'
+    JETREP_BIN = os.path.join(WORKING_DIRECTORY, 'bin')
     APP_VERSION_PATH = osp.join(WORKING_DIRECTORY, 'version.txt')
     RUNTIME_DIRECTORY = osp.join(WORKING_DIRECTORY, RUNTIME_NAME)
     CRONTAB_DIRECTORY = osp.join(WORKING_DIRECTORY, 'etc', 'crontab')

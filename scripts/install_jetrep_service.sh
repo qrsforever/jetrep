@@ -23,7 +23,8 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     StartLimitIntervalSec=60
     StartLimitBurst=3
     OnFailure=jetsos.service
-    After=multi-user.target
+    After=network-online.target
+    Wants=network-online.target
 
 [Service]
     Type=simple

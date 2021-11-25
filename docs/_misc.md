@@ -3,6 +3,10 @@
 
     https://github.com/oblique/create_ap/
 
+    nmcli dev wifi list
+    sudo nmcli device wifi connect 国电社区 password 88888888
+
+    https://blog.csdn.net/adocir/article/details/113877200
 
 ## Journalctl
 

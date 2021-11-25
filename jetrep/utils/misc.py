@@ -9,6 +9,13 @@
 
 from collections.abc import Iterable, Mapping
 from copy import deepcopy
+import datetime
+
+
+def util_delta_time(start, stop):
+    time_diff = stop - start
+    seconds = float(str(time_diff.total_seconds()))
+    return str(datetime.timedelta(seconds=seconds)).split(".")[0]
 
 
 class DotDict(dict):

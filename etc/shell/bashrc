@@ -1,6 +1,20 @@
+# JetRep
 alias jcurl='curl --header  "Content-Type: application/json" --request POST --data '
 alias jrun='sudo systemctl restart jetrep.service'
 alias jstop='sudo systemctl stop jetrep.service'
 alias jlog='clear; journalctl --no-page -u jetrep -u jetapi -u jetsrs -u jetgst -f -n 100'
 alias jrunlog='clear; sudo systemctl restart jetrep.service; journalctl -u jetrep -u jetapi -u jetpsrs -u jetgst -f -n 100'
 alias journalctl='journalctl --no-page'
+
+# Network
+alias net-show='nmcli connection show'
+alias net-dev='nmcli device'
+alias net-up='sudo nmcli connection up uuid'
+alias net-deco='sudo nmcli device disconnect' # + eth0
+alias net-conn='sudo nmcli device connect' # + eth0
+
+# Wifi
+alias wifi-list='nmcli device wifi list'
+alias wifi-co='sudo nmcli device wifi connect' # + <SSID> password <passwd>
+alias wifi-on='sudo nmcli radio wifi on'
+alias wifi-off='sudo nmcli radio wifi off'
