@@ -14,6 +14,7 @@ from flask import current_app as app
 from jetrep.core.message import (
     MessageType,
     CommandType,
+    NetworkType,
 )
 
 api_rep = Blueprint("rep", __name__)
@@ -52,3 +53,11 @@ def _rep_status():
     if all(list(result.values())):
         return "1"
     return "0"
+
+
+@api_rep.route('/wifi_connect', methods=['POST'])
+def _rep_wifi_connect():
+    reqjson = request.get_json()
+    app.logger.info(reqjson)
+    app.remote.send_message(MessageType.NETWORK, NetworkType.WIFI_CONNECT, -1, reqjson)
+    return OK

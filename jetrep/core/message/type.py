@@ -20,6 +20,7 @@ class MessageType(IntEnum):
     NOTIFY = 4
     TIMER = 5
     UPGRADE = 6
+    NETWORK = 7
     QUIT = 99
 
 
@@ -51,9 +52,9 @@ class ServiceType(IntEnum):
     GST = 3
     API = 4
 
-    RT_INFER_ENGINE = 5
-    RT_INFER_PREREP = 6
-    RT_INFER_POSTREP = 7
+    RT_INFER_ENGINE = 11
+    RT_INFER_PREREP = 12
+    RT_INFER_POSTREP = 13
 
     ALL = 99
 
@@ -91,6 +92,19 @@ class UpgradeType(IntEnum):
     DEV = 1
     OTA = 2
     UDISK = 3
+
+
+@unique
+class NetworkType(IntEnum):
+    NOP = -1
+    CONNECTED = 1
+    DISCONNECTED = 2
+    ADD = 3
+    REMOVE = 4
+    UP = 5
+    DOWN = 6
+
+    WIFI_CONNECT = 11
 
 
 @unique
@@ -135,13 +149,15 @@ def pretty_format(what, arg1, arg2):
             arg1 = TimerType(arg1)
         elif what == MessageType.UPGRADE:
             arg1 = UpgradeType(arg1)
+        elif what == MessageType.NETWORK:
+            arg1 = NetworkType(arg1)
         else:
             return '%d, %d, %d' % (what, arg1, arg2)
         if not isinstance(arg2, IntEnum):
             arg2 = PayloadType(arg2)
         what = MessageType(what)
     return '%s, %s, %s' % (what, arg1, arg2)
-        
+
 
 if __name__ == "__main__":
     print(MessageType.LOG, type(MessageType.LOG))

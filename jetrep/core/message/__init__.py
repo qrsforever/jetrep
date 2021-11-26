@@ -11,6 +11,7 @@ from .type import (
     NotifyType,
     PayloadType,
     TimerType,
+    NetworkType,
 )
 from .base import MessageHandler
 from .looper import MainHandlerThread, LogHandlerThread
@@ -28,4 +29,5 @@ __all__ = [
     'MessageHandler',
     'MainHandlerThread',
     'LogHandlerThread',
+    'NetworkType',
 ]

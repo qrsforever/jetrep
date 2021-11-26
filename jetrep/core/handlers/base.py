@@ -34,7 +34,7 @@ class DefaultHandler(MessageHandler):
             return self.app.start_trt_prerep()
         if arg2 == ServiceType.RT_INFER_POSTREP:
             return self.app.start_trt_postrep()
-        return False
+        return True
 
     def on_ctrl_stop(self, arg2, obj):
         if arg2 == ServiceType.API:
@@ -49,7 +49,7 @@ class DefaultHandler(MessageHandler):
             return self.app.stop_trt_prerep()
         if arg2 == ServiceType.RT_INFER_POSTREP:
             return self.app.stop_trt_postrep()
-        return False
+        return True
 
     def handle_message(self, what, arg1, arg2, obj):
         if what == MessageType.CTRL:
@@ -63,7 +63,7 @@ class DefaultHandler(MessageHandler):
                 return self.app.meld_config_file(obj)
             if arg1 == CommandType.API_RESET_PARAM:
                 return self.app.reset_config_file()
-        return False
+        return True
 
     @staticmethod
     def instance(app):

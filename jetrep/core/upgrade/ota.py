@@ -8,6 +8,7 @@
 # @date 2021-11-24 11:33
 
 import os
+import traceback
 import threading
 import requests, json
 import shutil
@@ -101,6 +102,7 @@ class OtaUpgrade(threading.Thread):
             # 3. unzip
             subprocess.call(f'unzip -qo {DP.UPDATE_ZIP_PATH} -d {dst_dir}', shell=True)
             if update_config.get('compatible', True):
+                os.makedirs(f'{dst_dir}/{DP.APP_NAME}/{DP.RUNTIME_NAME}/', exist_ok=True)
                 shutil.copy(DP.JETREP_CONF_PATH, f'{dst_dir}/{DP.APP_NAME}/{DP.RUNTIME_NAME}/')
 
             # 4. install(soft link)
@@ -113,8 +115,12 @@ class OtaUpgrade(threading.Thread):
         except subprocess.CalledProcessError as exc:
             payload = f'Run subprocess: {exc.cmd} returncode: {exc.returncode}'
             self.native.send_message(MessageType.UPGRADE, UpgradeType.OTA, PayloadType.UPGRADE_ERROR, payload)
-        except Exception as err:
-            self.native.send_message(MessageType.UPGRADE, UpgradeType.OTA, PayloadType.UPGRADE_ERROR, f'{err}')
+        except Exception:
+            self.native.send_message(
+                MessageType.UPGRADE,
+                UpgradeType.OTA,
+                PayloadType.UPGRADE_ERROR,
+                f'{traceback.format_exc(limit=6)}')
         finally:
             if os.path.exists(DP.UPDATE_ZIP_PATH):
                 os.remove(DP.UPDATE_ZIP_PATH)

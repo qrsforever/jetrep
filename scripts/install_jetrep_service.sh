@@ -21,9 +21,9 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     Description=JetRep Main Process
     Documentation=http://jetrep.hzcsai.com
     StartLimitIntervalSec=60
-    StartLimitBurst=3
+    StartLimitBurst=5
     OnFailure=jetsos.service
-    After=network-online.target
+    # After=network-online.target
     Wants=network-online.target
 
 [Service]

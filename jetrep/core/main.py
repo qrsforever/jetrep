@@ -32,6 +32,7 @@ from jetrep.core.handlers import (
     DefaultHandler,
     StateHandler,
     NotifyHandler,
+    NetworkHandler,
 )
 from jetrep.core.tasks import (
     ServiceRPC,
@@ -45,7 +46,7 @@ from jetrep.utils.shell import (
     util_stop_service
 )
 from jetrep.core.context import PSContext
-from jetrep.core.event import USBEventMonitor
+from jetrep.core.event import SystemEventMonitor
 from jetrep.constants import DefaultPath as DP
 from jetrep.utils.misc import MeldDict
 from jetrep.core.upgrade import SoftwareUpgrade
@@ -195,6 +196,7 @@ class JetRepApp(Application):
         self.main_looper = MainHandlerThread()
         self.native = NativeHandler(self, LogHandler.instance(self))
         DefaultHandler.instance(self)
+        NetworkHandler.instance(self)
         StateHandler.instance(self)
         NotifyHandler.instance(self)
 
@@ -212,7 +214,8 @@ class JetRepApp(Application):
         self.softu = SoftwareUpgrade(self.native, config=self.config)
         self.softu.setup()
 
-        self.event_monitor = USBEventMonitor(self.native)
+        self.event_monitor = SystemEventMonitor(self.native, self.app_exit)
+        self.event_monitor.setup()
 
     def app_update_config(self, config_file):
         self.load_config_file(config_file)
@@ -253,7 +256,6 @@ class JetRepApp(Application):
         self.event_monitor.start()
         self.native.send_message(MessageType.NOTIFY, NotifyType.APP_CONF, PayloadType.CONFIG_LOADED)
         self.native.send_message(MessageType.NOTIFY, NotifyType.TO_CLOUD, PayloadType.APP_VERSION)
-        self.native.send_message(MessageType.CTRL, CommandType.APP_START, ServiceType.API)
 
     def restart(self):
         return not util_start_service('jetrep', restart=True)
@@ -265,7 +267,7 @@ class JetRepApp(Application):
         self.event_monitor.stop()
         self.native.send_message(MessageType.CTRL, CommandType.APP_STOP, ServiceType.RT_INFER_POSTREP)
 
-    def wait(self, timeout=20):
+    def wait(self, timeout=10):
         for _ in range(timeout):
             result = self.status()
             self.native.logi(f'Status: [{result}]')
@@ -340,6 +342,9 @@ class JetRepApp(Application):
         self.native.logi('Stop Api Handler')
         return not util_stop_service(self.svc_name_repapi) \
                 if util_check_service(self.svc_name_repapi) else True
+
+    def start_network(self):
+        pass
 
     def run(self, argv=None):
         try:
