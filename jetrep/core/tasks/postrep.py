@@ -46,7 +46,7 @@ class TRTPostrepProcess(ServiceBase):
         ]
         writer = None
         rtmp_url = None
-        remote.send_message(MessageType.STATE, ServiceType.RT_INFER_POSTREP, StateType.STARTED)
+        remote.send_message(MessageType.STATE, ServiceType.RT_INFER_POSTREP, StateType.STARTED, self.name)
         sumcount = 0
         while not exit.is_set():
             try:

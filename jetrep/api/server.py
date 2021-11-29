@@ -89,7 +89,7 @@ if __name__ == "__main__":
                 connect_to='tcp://{}:{}'.format(args.rpc_host, args.rpc_port),
                 timeout=10,
                 passive_heartbeat=True)
-            remote.send_message(MessageType.STATE, ServiceType.API, StateType.STARTED, 'repapi')
+            remote.send_message(MessageType.STATE, ServiceType.API, StateType.STARTED, 'jetapi')
             app.remote = remote
 
             server = pywsgi.WSGIServer((args.host, args.port), app)
@@ -97,7 +97,7 @@ if __name__ == "__main__":
             def shutdown(num, frame):
                 if app.remote:
                     try:
-                        app.remote.send_message(MessageType.STATE, ServiceType.API, StateType.STOPPED, 'repapi')
+                        app.remote.send_message(MessageType.STATE, ServiceType.API, StateType.STOPPED, 'jetapi')
                         app.remote.close()
                         app.remote = None
                     except Exception:

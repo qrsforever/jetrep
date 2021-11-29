@@ -53,7 +53,7 @@ class TRTEngineProcess(ServiceBase):
 
             inputs, outputs, bindings, stream = common.allocate_buffers(engine)
 
-            remote.send_message(MessageType.STATE, ServiceType.RT_INFER_ENGINE, StateType.STARTED)
+            remote.send_message(MessageType.STATE, ServiceType.RT_INFER_ENGINE, StateType.STARTED, self.name)
             while not exit.is_set():
                 try:
                     bucket = self.mQin.get(timeout=mq_timeout)

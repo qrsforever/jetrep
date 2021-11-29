@@ -30,7 +30,7 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     UMask=0000
     WorkingDirectory=$ROOT_DIR
     EnvironmentFile=$ROOT_DIR/etc/jetgst.env
-    Restart=always
+    Restart=on-failure
     RestartSec=10
     # ExecStartPre=-/bin/systemctl restart nvargus-daemon
     ExecStartPre=-/usr/bin/curl -d '{"name": "jetgst", "status": "starting"}' $RESTAPI

@@ -47,10 +47,10 @@ class ServiceBase(Process):
             self.lock.release() # TODO call stop before start
         except Exception:
             pass
-        handler.send_message(MessageType.STATE, self.type(), StateType.STOPPING, self.clsname)
+        handler.send_message(MessageType.STATE, self.type(), StateType.STOPPING, self.name)
         self.exited.wait(timeout=2*self.mq_timeout)
         if not self.exited.is_set():
-            handler.send_message(MessageType.STATE, self.type(), StateType.STOPPTIMEOUT, self.clsname)
+            handler.send_message(MessageType.STATE, self.type(), StateType.STOPPTIMEOUT, self.name)
         self.join(0.5)
 
     def run(self):
@@ -64,20 +64,20 @@ class ServiceBase(Process):
         remote = self.initialize()
         if remote:
             remote.logi(f'Process {self.name} is starting...')
-            remote.send_message(MessageType.STATE, self.type(), StateType.STARTING, self.clsname)
+            remote.send_message(MessageType.STATE, self.type(), StateType.STARTING, self.name)
             try:
                 self.task(remote, self.exit, self.mq_timeout)
-                remote.send_message(MessageType.STATE, self.type(), StateType.STOPPED, self.clsname)
+                remote.send_message(MessageType.STATE, self.type(), StateType.STOPPED, self.name)
             except Exception:
                 remote.loge(f'{traceback.format_exc(limit=6)}')
-                remote.send_message(MessageType.STATE, self.type(), StateType.CRASHED, self.clsname)
+                remote.send_message(MessageType.STATE, self.type(), StateType.CRASHED, self.name)
             finally:
+                self.exited.set()
                 self.on_destroy()
                 remote.logw(f'Process {self.name} is finished...')
                 remote.close()
         else:
             raise RuntimeError('Can not connect rpc server')
-        self.exited.set()
 
     @property
     def mQin(self):

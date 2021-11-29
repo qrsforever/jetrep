@@ -30,13 +30,13 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     Group=$USER
     UMask=0000
     WorkingDirectory=$SRS_DIR
-    Restart=always
+    Restart=on-failure
     RestartSec=10
-    ExecStartPre=-/usr/bin/curl -d '{"name": "srsrtc", "status": "starting"}' $RESTAPI
+    ExecStartPre=-/usr/bin/curl -d '{"name": "jetsrs", "status": "starting"}' $RESTAPI
     ExecStart=$SRS_DIR/objs/srs -c $ROOT_DIR/etc/jetsrs.conf
     ExecStartPost=/bin/sleep 2
-    ExecStartPost=-/usr/bin/curl -d '{"name": "srsrtc", "status": "started"}' $RESTAPI
-    ExecStopPost=-/usr/bin/curl -d '{"name": "srsrtc", "status": "stopped"}' $RESTAPI
+    ExecStartPost=-/usr/bin/curl -d '{"name": "jetsrs", "status": "started"}' $RESTAPI
+    ExecStopPost=-/usr/bin/curl -d '{"name": "jetsrs", "status": "stopped"}' $RESTAPI
     TimeoutStartSec=10
     TimeoutStopSec=5
     StandardOutput=syslog

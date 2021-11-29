@@ -10,7 +10,7 @@
     UMask=0000
     WorkingDirectory=/jetrep
     EnvironmentFile=/jetrep/etc/jetgst.env
-    Restart=always
+    Restart=on-failure
     RestartSec=10
     # ExecStartPre=-/bin/systemctl restart nvargus-daemon
     ExecStartPre=-/usr/bin/curl -d '{"name": "jetgst", "status": "starting"}' http://127.0.0.1:80/apis/svc/status

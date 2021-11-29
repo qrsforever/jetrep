@@ -30,7 +30,7 @@ class DefaultPath(object):
     VIDEO_CLIPS_PATH = osp.join(RUNTIME_DIRECTORY, 'videos')
 
     UPDATE_CONFIG_PATH = osp.join(RUNTIME_DIRECTORY, 'jetrep_update.json')
-    UPDATE_ZIP_PATH = osp.join(RUNTIME_DIRECTORY, 'jetrep_update.zip')
+    UPDATE_ZIP_PATH = osp.join('/tmp', 'jetrep_update.zip')
     UPDATE_INSTALL_PATH = '/var/jetrep/archives' # TODO Don't modify used in scripts
 
 

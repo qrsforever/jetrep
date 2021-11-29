@@ -30,7 +30,7 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     UMask=0000
     WorkingDirectory=$ROOT_DIR
     Environment="PYTHONPATH=$ROOT_DIR"
-    Restart=always
+    Restart=on-failure
     RestartSec=5
     ExecStart=/usr/bin/python3 jetrep/api/server.py --host 0.0.0.0 --port 80 --rpc_host 127.0.0.1 --rpc_port 8181
     TimeoutStartSec=10

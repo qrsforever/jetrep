@@ -50,12 +50,21 @@ class StateHandler(MessageHandler):
                 return self.send_message(MessageType.CTRL, CommandType.APP_STOP, ServiceType.RT_INFER_PREREP)
             if arg1 == ServiceType.RT_INFER_PREREP:
                 return self.send_message(MessageType.CTRL, CommandType.APP_STOP, ServiceType.RT_INFER_ENGINE)
+
+            status = self.app.status()
             if arg1 == ServiceType.RT_INFER_ENGINE:
-                return self.send_message(MessageType.CTRL, CommandType.APP_STOP, ServiceType.GST)
+                if status[self.app.svc_name_jetgst]:
+                    return self.send_message(MessageType.CTRL, CommandType.APP_STOP, ServiceType.GST)
+                arg1 = ServiceType.GST
+
             if arg1 == ServiceType.GST:
-                return self.send_message(MessageType.CTRL, CommandType.APP_STOP, ServiceType.SRS)
+                if status[self.app.svc_name_jetsrs]:
+                    return self.send_message(MessageType.CTRL, CommandType.APP_STOP, ServiceType.SRS)
+                arg1 = ServiceType.SRS
+
             if arg1 == ServiceType.SRS:
-                return self.send_message(MessageType.CTRL, CommandType.APP_STOP, ServiceType.API)
+                if status[self.app.svc_name_jetapi]:
+                    return self.send_message(MessageType.CTRL, CommandType.APP_STOP, ServiceType.API)
         return False
 
     def on_running_message(self, what, arg1, arg2, obj):

@@ -22,8 +22,8 @@ OK = Response(status=200, headers={})
 ERR = Response(status=500, headers={})
 
 SER_STR2INT = {
-    'repapi': ServiceType.API,
-    'srsrtc': ServiceType.SRS,
+    'jetapi': ServiceType.API,
+    'jetsrs': ServiceType.SRS,
     'jetgst': ServiceType.GST,
 }
 

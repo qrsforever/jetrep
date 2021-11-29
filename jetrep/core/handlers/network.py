@@ -36,14 +36,17 @@ class NetworkHandler(MessageHandler):
         self.jet_apname = 'JET-%s' % util_get_mac()[-6:]
 
     def on_wifi_connect(self, arg2, obj):
-        ssid = obj['ssid']
-        pswd = obj['password']
-        util_wifi_connect(ssid=ssid, passwd=pswd, apname=self.jet_apname)
-        return self.send_message(MessageType.CTRL, CommandType.APP_RESTART)
+        ret = util_wifi_connect(ssid=obj['ssid'], passwd=obj['password'], apname=self.jet_apname)
+        if 0 != ret:
+            # wifi connect fails
+            self.app.native.logw(f'wifi connect error [{ret}]: {obj}')
+        return True
 
     def on_connect(self, arg2, obj):
+        if self.net_active == UNINIT:
+            return True
         self.net_active = SUCCESS
-        return True
+        return self.send_message(MessageType.CTRL, CommandType.APP_RESTART)
 
     def on_disconnect(self, arg2, obj):
         # Wifi AP

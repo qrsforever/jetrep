@@ -59,7 +59,7 @@ class TRTPrerepProcess(ServiceBase):
         pre_frame = None
         keep_flag = 1
         bucket = None
-        remote.send_message(MessageType.STATE, ServiceType.RT_INFER_PREREP, StateType.STARTED)
+        remote.send_message(MessageType.STATE, ServiceType.RT_INFER_PREREP, StateType.STARTED, self.name)
         while not exit.is_set():
             retval, frame_bgr = cap.read()
             if not retval:

@@ -7,7 +7,7 @@ APP_NAME=`basename $TOP_DIR`
 
 cd $TOP_DIR
 
-DATETIME=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+DATETIME=$(date +'%Y-%m-%dT%H:%M:%SZ')
 GIT_VERSION=$(git describe --tags --always)
 GIT_COMMIT=$(git rev-parse HEAD | cut -c 1-7)
 GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)

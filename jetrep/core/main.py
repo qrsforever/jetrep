@@ -117,9 +117,9 @@ class JetRepApp(Application):
     name = Unicode('JetRepApp')
     description = Unicode(__doc__)
 
-    svc_name_repapi = Unicode('jetapi', read_only=True)
+    svc_name_jetapi = Unicode('jetapi', read_only=True)
     svc_name_jetgst = Unicode('jetgst', read_only=True)
-    svc_name_srsrtc = Unicode('jetsrs', read_only=True)
+    svc_name_jetsrs = Unicode('jetsrs', read_only=True)
     tsk_name_engine = Unicode(TRTEngineProcess.name, read_only=True)
     tsk_name_prerep = Unicode(TRTPrerepProcess.name, read_only=True)
     tsk_name_postrep = Unicode(TRTPostrepProcess.name, read_only=True)
@@ -278,8 +278,8 @@ class JetRepApp(Application):
     def status(self):
         result = {}
         result[self.svc_name_jetgst] = util_check_service(self.svc_name_jetgst)
-        result[self.svc_name_srsrtc] = util_check_service(self.svc_name_srsrtc)
-        result[self.svc_name_repapi] = util_check_service(self.svc_name_repapi)
+        result[self.svc_name_jetsrs] = util_check_service(self.svc_name_jetsrs)
+        result[self.svc_name_jetapi] = util_check_service(self.svc_name_jetapi)
         for name, tsk in self.tasks.items():
             result[name] = tsk.is_alive()
         return result
@@ -327,21 +327,21 @@ class JetRepApp(Application):
 
     def start_srs_webrtc(self):
         self.native.logi('Start Srs Webrtc')
-        return not util_start_service(self.svc_name_srsrtc, True)
+        return not util_start_service(self.svc_name_jetsrs, True)
 
     def stop_srs_webrtc(self):
         self.native.logi('Stop Srs Webrtc')
-        return not util_stop_service(self.svc_name_srsrtc) \
-                if util_check_service(self.svc_name_srsrtc) else True
+        return not util_stop_service(self.svc_name_jetsrs) \
+                if util_check_service(self.svc_name_jetsrs) else True
 
     def start_api_handler(self):
         self.native.logi('Start Api Handler')
-        return not util_start_service(self.svc_name_repapi, True)
+        return not util_start_service(self.svc_name_jetapi, True)
 
     def stop_api_handler(self):
         self.native.logi('Stop Api Handler')
-        return not util_stop_service(self.svc_name_repapi) \
-                if util_check_service(self.svc_name_repapi) else True
+        return not util_stop_service(self.svc_name_jetapi) \
+                if util_check_service(self.svc_name_jetapi) else True
 
     def start_network(self):
         pass
