@@ -84,6 +84,7 @@ class OtaUpgrade(threading.Thread):
             zip_url = f'{self.server_url}/{update_config["url"]}'
         zip_md5 = update_config['md5']
         dst_dir = f'{DP.UPDATE_INSTALL_PATH}/{update_config["version"]}'
+        tmp_dir = '/tmp/jetrep_update'
         try:
             # 2. download
             zip_res = requests.get(zip_url,
@@ -97,15 +98,22 @@ class OtaUpgrade(threading.Thread):
             md5 = subprocess.check_output(f'md5sum {DP.UPDATE_ZIP_PATH} | cut -c1-32', shell=True)
             if md5.decode('utf-8').strip() != zip_md5:
                 raise RuntimeError('OtaUpgrade zip md5 not match!')
-            if os.path.exists(dst_dir):
-                shutil.rmtree(dst_dir)
+            if os.path.exists(tmp_dir):
+                shutil.rmtree(tmp_dir)
             # 3. unzip
-            subprocess.call(f'unzip -qo {DP.UPDATE_ZIP_PATH} -d {dst_dir}', shell=True)
+            self.native.logi('Unzip [%s]!' % DP.UPDATE_ZIP_PATH)
+            subprocess.call(f'/usr/bin/unzip -qo {DP.UPDATE_ZIP_PATH} -d {tmp_dir}', shell=True)
             if update_config.get('compatible', True):
-                os.makedirs(f'{dst_dir}/{DP.APP_NAME}/{DP.RUNTIME_NAME}/', exist_ok=True)
-                shutil.copy(DP.JETREP_CONF_PATH, f'{dst_dir}/{DP.APP_NAME}/{DP.RUNTIME_NAME}/')
+                self.native.logi(f'copy {DP.JETREP_CONF_PATH} to {tmp_dir}/{DP.APP_NAME}/{DP.RUNTIME_NAME}/')
+                os.makedirs(f'{tmp_dir}/{DP.APP_NAME}/{DP.RUNTIME_NAME}/', exist_ok=True)
+                shutil.copy(DP.JETREP_CONF_PATH, f'{tmp_dir}/{DP.APP_NAME}/{DP.RUNTIME_NAME}/')
 
             # 4. install(soft link)
+            self.native.logi(f'make link[{dst_dir}/{DP.APP_NAME}]')
+            if os.path.exists(dst_dir):
+                shutil.rmtree(dst_dir)
+            shutil.move(tmp_dir, dst_dir)
+            os.remove(DP.UPDATE_ZIP_PATH)
             os.remove(DP.APP_LINK)
             os.symlink(f'{dst_dir}/{DP.APP_NAME}', DP.APP_LINK)
 
@@ -115,12 +123,13 @@ class OtaUpgrade(threading.Thread):
         except subprocess.CalledProcessError as exc:
             payload = f'Run subprocess: {exc.cmd} returncode: {exc.returncode}'
             self.native.send_message(MessageType.UPGRADE, UpgradeType.OTA, PayloadType.UPGRADE_ERROR, payload)
-        except Exception:
+        except Exception as err:
+            traceback.print_stack(limit=6)
             self.native.send_message(
                 MessageType.UPGRADE,
                 UpgradeType.OTA,
                 PayloadType.UPGRADE_ERROR,
-                f'{traceback.format_exc(limit=6)}')
+                f'{err}')
         finally:
             if os.path.exists(DP.UPDATE_ZIP_PATH):
                 os.remove(DP.UPDATE_ZIP_PATH)

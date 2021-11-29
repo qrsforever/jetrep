@@ -184,6 +184,8 @@ class JetRepApp(Application):
 
     def initialize(self, argv=None):
         self.parse_command_line(argv)
+        if not os.path.exists(DP.RUNTIME_DIRECTORY):
+            os.makedirs(DP.RUNTIME_DIRECTORY)
         if not os.path.exists(self.config_file):
             shutil.copyfile(DP.JETREP_DEF_CONF_PATH, self.config_file)
         if self.config_file:
