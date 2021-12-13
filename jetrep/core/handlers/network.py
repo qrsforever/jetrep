@@ -43,10 +43,13 @@ class NetworkHandler(MessageHandler):
         return True
 
     def on_connect(self, arg2, obj):
-        if self.net_active == UNINIT:
-            return True
+        old_state = self.net_active
         self.net_active = SUCCESS
-        return self.send_message(MessageType.CTRL, CommandType.APP_RESTART)
+        if old_state == UNINIT:
+            return self.send_message(MessageType.CTRL, CommandType.APP_START, ServiceType.API)
+        if old_state == FAILURE:
+            return self.send_message(MessageType.CTRL, CommandType.APP_RESTART)
+        return True
 
     def on_disconnect(self, arg2, obj):
         # Wifi AP
@@ -59,8 +62,6 @@ class NetworkHandler(MessageHandler):
             return self.net_active == FAILURE
 
         if what == MessageType.NETWORK:
-            if self.net_active == UNINIT:
-                self.send_message(MessageType.CTRL, CommandType.APP_START, ServiceType.API)
             if arg1 == NetworkType.DISCONNECTED:
                 return self.on_disconnect(arg2, obj)
             if arg1 == NetworkType.CONNECTED:
