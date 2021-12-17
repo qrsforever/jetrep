@@ -18,6 +18,12 @@
 1. [Cause a script to execute after networking has started?][4]
 
 
+## Libs
+
+1. [libgomp-d22c30c5.so.1.0.0: cannot allocate memory in static TLS block][5]
+
+
+[5]: https://github.com/keras-team/autokeras/issues/1475
 [4]: https://unix.stackexchange.com/questions/126009/cause-a-script-to-execute-after-networking-has-started
 [3]: https://github-wiki-see.page/m/ossrs/srs/wiki/v4_CN_DeliveryHLS
 [2]: https://github.com/opencv/opencv/issues/17879

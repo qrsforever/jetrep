@@ -40,3 +40,9 @@ class DefaultServer(object):
     RTMP_STREAM_PRE = 1
     RTMP_STREAM_POST = 2
     RTMP_DVR_DURATION = 900
+
+
+class DefaultPSContext(object):
+    EF_PKL_PATH = '/tmp'
+    EF_ALPHA = 0.01
+    EF_BETA = 0.75

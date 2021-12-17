@@ -7,11 +7,16 @@
 # @version 1.0
 # @date 2021-11-12 15:12
 
+import os
 import socket
 import time
 import uuid
 import random
 import subprocess
+import ssl
+from urllib import request, parse
+
+ssl._create_default_https_context = ssl._create_unverified_context
 
 
 def util_check_port(port, ip='127.0.0.1', trycnt=1):
@@ -200,6 +205,20 @@ def util_get_mac(device='eth0'):
     except Exception:
         mac = "000000000000"
     return mac
+
+
+def util_request_data(x, path='/tmp'):
+    if x.startswith('http') or x.startswith('ftp'):
+        x = parse.quote(x, safe=':/?-=')
+        if os.path.isdir(path):
+            path = os.path.join(path, os.path.basename(x))
+        r = request.urlretrieve(x, path)
+        x = r[0]
+    elif x.startswith('oss://'):
+        raise NotImplementedError('weight schema: oss')
+    elif x.startswith('file://'):
+        x = x[7:]
+    return x
 
 
 if __name__ == "__main__":

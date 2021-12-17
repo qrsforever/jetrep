@@ -35,6 +35,13 @@ class TRTPostrepProcess(ServiceBase):
         return ServiceType.RT_INFER_POSTREP
 
     def task(self, remote, exit, mq_timeout):
+        def empirical_kstest(emb, scaler, pca, ecdfs, alpha=0.01):
+            out = pca.transform(scaler.transform(emb))
+            pvals = np.array([stats.kstest(out[:, i], cdf=lambda x: ecdfs[i](x))[1] for i in range(out.shape[-1])])
+            return sum(pca.explained_variance_ratio_[pvals > alpha])
+
+        import pickle
+        from scipy import stats
         kgst = [
             'appsrc',
             'videoconvert',
@@ -45,7 +52,8 @@ class TRTPostrepProcess(ServiceBase):
             'h264parse',
         ]
         writer = None
-        rtmp_url = None
+        pcaks = None
+        alpha = 0
         remote.send_message(MessageType.STATE, ServiceType.RT_INFER_POSTREP, StateType.STARTED, self.name)
         sumcount = 0
         while not exit.is_set():
@@ -56,7 +64,7 @@ class TRTPostrepProcess(ServiceBase):
             (width, height), rate = bucket.frame_size, bucket.frame_rate
             if bucket.reset_count:
                 sumcount = 0
-            if rtmp_url != bucket.rtmp_url:
+            if bucket.rtmp_url:
                 rtmp_url = bucket.rtmp_url
                 gst_str = ' ! '.join(kgst + [
                     'queue',
@@ -68,6 +76,18 @@ class TRTPostrepProcess(ServiceBase):
                     writer.release()
                 writer = cv2.VideoWriter(gst_str, 0, rate, (width, height))
 
+            if bucket.embedding_filter:
+                pcaks = None
+                try:
+                    enable, path, alpha, beta = bucket.embedding_filter
+                    if enable and path:
+                        pcaks = pickle.load(open(path, 'rb'))
+                        pcaks['alpha'] = alpha
+                        pcaks['beta'] = beta
+                        pcaks['thresh'] = sum(pcaks['pca'].explained_variance_ratio_) / 2
+                except Exception as err:
+                    remote.loge(f'load embedding filter [{path}] err: {err}')
+
             final_embs, within_scores, period_scores = bucket.final_embs, bucket.within_scores, bucket.period_scores
 
             per_frame_periods = np.argmax(period_scores, axis=-1) + 1
@@ -76,6 +96,19 @@ class TRTPostrepProcess(ServiceBase):
 
             within_period_scores = sigmoid(within_scores)[:, 0]
             within_period_scores = np.sqrt(within_period_scores * conf_pred_periods)
+            if pcaks:
+                alpha = pcaks.get('alpha', 0.01)
+                beta = pcaks.get('beta', 0.7)
+                thresh = pcaks.get('thresh', 0.4)
+                factors = np.ones(len(final_embs))
+                for i in range(len(final_embs)):
+                    emb = final_embs[i]
+                    ksret = empirical_kstest(emb, pcaks['scaler'], pcaks['pca'], pcaks['ecdfs'], alpha)
+                    if ksret < thresh:
+                        factors[i] = beta * ksret / thresh
+                remote.logi(f'filter factors: {factors}')
+                factors = factors.repeat(64)
+                within_period_scores *= factors
             within_period_binary = np.asarray(within_period_scores > 0.5)
 
             per_frame_counts = within_period_binary * np.where(per_frame_periods < 3, 0.0, 1 / per_frame_periods)
@@ -108,9 +141,15 @@ class TRTPostrepProcess(ServiceBase):
                         cv2.rectangle(frame_bgr, (fx1, fy1), (fx2, fy2), (0, 255, 0), 2)
 
                     cv2.putText(
+                        frame_bgr,
+                        f'{width}x{height} {rate} S:{bucket.stride} A:{bucket.area_thresh} C:{c + sumcount:.3f}',
+                        (int(0.2 * width), int(0.2 * height)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                    
+                    if pcaks:
+                        cv2.putText(
                             frame_bgr,
-                            f'{width}x{height} {rate} S:{bucket.stride} A:{bucket.area_thresh} C:{c + sumcount:.3f}',
-                            (int(0.2 * width), int(0.2 * height)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                            f'Alpha: {pcaks["alpha"]:.3f} Beta: {pcaks["beta"]:.3f}',
+                            (int(0.1 * width), int(0.9 * height)), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
                     if writer:
                         writer.write(frame_bgr)
                 else:
@@ -120,7 +159,7 @@ class TRTPostrepProcess(ServiceBase):
                 cap.release()
             if os.path.exists(bucket.raw_frames_path):
                 os.unlink(bucket.raw_frames_path)
-            del bucket.within_scores, bucket.period_scores
+            del bucket.final_embs, bucket.within_scores, bucket.period_scores
             del bucket.raw_frames_path, bucket.selected_indices
             remote.send_message(MessageType.NOTIFY, NotifyType.TO_CLOUD, PayloadType.REP_INFER_RESULT, bucket)
             del bucket

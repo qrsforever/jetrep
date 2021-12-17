@@ -43,7 +43,7 @@ class TRTEngineProcess(ServiceBase):
         import tensorrt as trt
         import common
 
-        remote.logi('Create engine context.')
+        remote.logi('Create engine context [%s]' % self.weight_path)
         # cuda.init()
         # device = cuda.Device(0)
         # ctx = device.make_context()
@@ -67,7 +67,7 @@ class TRTEngineProcess(ServiceBase):
                 inputs[0].host = np.reshape(np_frames, (1, 64, 112, 112, 3))
 
                 trt_outputs = common.do_inference_v2(context, bindings=bindings, inputs=inputs, outputs=outputs, stream=stream)
-                trt_outputs = [output.reshape(shape) for output, shape in zip(trt_outputs, ((-1, 1), (-1, 32)))]
+                trt_outputs = [output.reshape(shape) for output, shape in zip(trt_outputs, ((-1, 64, 512), (-1, 1), (-1, 32)))]
 
                 bucket.final_embs = trt_outputs[0].copy()
                 bucket.within_scores = trt_outputs[1].copy()

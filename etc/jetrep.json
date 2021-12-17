@@ -25,9 +25,9 @@
             0.9,
             0.1
         ],
-        "area_rate": 0.01,
+        "area_rate": 0.002,
         "strides": [
-            4
+            3
         ],
         "video_clips_path": "/srs/",
         "synth_video": {
@@ -37,7 +37,13 @@
                 "duration": 300
             }
         },
-        "max_duration": 20,
+        "max_duration": 10,
+        "embedding_filter": {
+            "enable": true,
+            "url": "https://frepai.s3.didiyunapi.com/datasets/weights/d0854f5eb6ea.pkl",
+            "alpha":  0.01,
+            "beta": 0.85
+        },
         "reset_count": true
     }
 }

@@ -15,9 +15,8 @@ import traitlets
 import os.path as osp
 from traitlets.config.configurable import LoggingConfigurable
 from traitlets import Int, Float, Unicode, Tuple, List, Dict, Bool
-from jetrep.constants import DefaultServer
-from jetrep.utils.net import util_get_uuid
-from jetrep.constants import DefaultPath
+from jetrep.constants import DefaultServer, DefaultPath, DefaultPSContext
+from jetrep.utils.net import util_get_mac, util_request_data
 
 
 class PSContext(LoggingConfigurable):
@@ -56,6 +55,18 @@ class PSContext(LoggingConfigurable):
     }
     synth_video = Dict().tag(config=True)
 
+    embedding_filter_schema = {
+        'type': 'object',
+        'properties': {
+            'enable': {'type': 'boolean'},
+            'url': {'type': 'string'},
+            'alpha': {'type': 'number'},
+            'beta': {'type': 'number'}
+        },
+        'required': ['enable', 'url']
+    }
+    embedding_filter = Dict().tag(config=True)
+
     F = 64
 
     def __init__(self, native, *args, **kwargs):
@@ -65,6 +76,7 @@ class PSContext(LoggingConfigurable):
         self._stride = 4
         self._area_thresh = 0
         self._rtmp_url = None
+        self._embedding_filter = None
         super(PSContext, self).__init__(*args, **kwargs)
 
     def setup(self):
@@ -109,9 +121,12 @@ class PSContext(LoggingConfigurable):
         bucket.terminal_time = bucket.start_time + self.max_duration
         bucket.reset_count = self.reset_count
         bucket.rtmp_url = self._rtmp_url
+        bucket.embedding_filter = self._embedding_filter
         self.native.logd(bucket)
         if self.reset_count:
             self.reset_count = False
+        self._rtmp_url = None
+        self._embedding_filter = None
         return bucket
 
     @staticmethod
@@ -124,10 +139,29 @@ class PSContext(LoggingConfigurable):
         if 'rtmp' in conf:
             server = conf['rtmp'].get('server')
             port = conf['rtmp'].get('port', DefaultServer.RTMP_PORT)
-            stream = conf['rtmp'].get('stream', DefaultServer.RTMP_STREAM_POST)
+            stream = conf['rtmp'].get('stream', util_get_mac())
             duration = conf['rtmp'].get('duration', DefaultServer.RTMP_DVR_DURATION)
-            self._rtmp_url = f'rtmp://{server}:{port}/{util_get_uuid()}_post/{stream}?vhost=jet{duration}'
+            self._rtmp_url = f'rtmp://{server}:{port}/post/{stream}?vhost=jet{duration}'
         else:
+            pass
+
+    @traitlets.observe('embedding_filter')
+    def _on_embedding_filter(self, change):
+        conf = change['new']
+        url = conf.get('url')
+        enable = conf.get('enable')
+        try:
+            if not enable:
+                self._embedding_filter = (0, 0, 0, 0)
+            else:
+                basepath = os.path.basename(url)
+                pkl_path = os.path.join(DefaultPSContext.EF_PKL_PATH, basepath)
+                if not os.path.exists(pkl_path):
+                    pkl_path = util_request_data(url, path=pkl_path)
+                alpha = conf.get('alpha', DefaultPSContext.EF_ALPHA)
+                beta = conf.get('beta', DefaultPSContext.EF_BETA)
+                self._embedding_filter = (1, pkl_path, alpha, beta)
+        except Exception:
             pass
 
     @traitlets.observe('frame_size')
@@ -202,6 +236,16 @@ class PSContext(LoggingConfigurable):
         self.native.logd(value)
         try:
             jsonschema.validate(value, self.synth_video_schema)
+        except jsonschema.ValidationError as e:
+            raise traitlets.TraitError(e)
+        return proposal['value']
+
+    @traitlets.validate('embedding_filter')
+    def _validate_embedding_filter(self, proposal):
+        value = proposal['value']
+        self.native.logd(value)
+        try:
+            jsonschema.validate(value, self.embedding_filter_schema)
         except jsonschema.ValidationError as e:
             raise traitlets.TraitError(e)
         return proposal['value']
