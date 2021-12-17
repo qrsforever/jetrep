@@ -16,7 +16,8 @@ from jetrep.core.message import (
     StateType,
 )
 
-DEFAULT_WGT_PATH = '/home/nano/models/repnet_b1.trt'
+# DEFAULT_WGT_PATH = '/home/nano/models/repnet_b1.trt'
+DEFAULT_WGT_PATH = '/home/nano/models/repnet_b1_embs.trt'
 
 
 class TRTEngineProcess(ServiceBase):
@@ -68,8 +69,9 @@ class TRTEngineProcess(ServiceBase):
                 trt_outputs = common.do_inference_v2(context, bindings=bindings, inputs=inputs, outputs=outputs, stream=stream)
                 trt_outputs = [output.reshape(shape) for output, shape in zip(trt_outputs, ((-1, 1), (-1, 32)))]
 
-                bucket.within_scores = trt_outputs[0].copy()
-                bucket.period_scores = trt_outputs[1].copy()
+                bucket.final_embs = trt_outputs[0].copy()
+                bucket.within_scores = trt_outputs[1].copy()
+                bucket.period_scores = trt_outputs[2].copy()
 
                 del bucket.inputs
                 self.mQout.put(bucket)

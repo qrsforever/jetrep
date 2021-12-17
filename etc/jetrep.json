@@ -34,8 +34,7 @@
             "rtmp": {
                 "server": "0.0.0.0",
                 "port": 1935,
-                "stream": "2",
-                "duration": 60
+                "duration": 300
             }
         },
         "max_duration": 20,

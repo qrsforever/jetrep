@@ -7,10 +7,10 @@
 # @version 1.0
 # @date 2021-11-10 18:38
 
-import uuid
 import traitlets
 from traitlets.config.configurable import LoggingConfigurable
 from traitlets import Unicode
+from jetrep.utils.net import util_get_mac
 
 
 class GElement(LoggingConfigurable):
@@ -29,8 +29,7 @@ class GElement(LoggingConfigurable):
 
     @traitlets.default('uuid')
     def _default_uuid(self):
-        # uuid.uuid1()
-        return uuid.UUID(int=uuid.getnode()).hex[-12:]
+        return util_get_mac()
 
     def gst_str(self):
         gst = ' t_%s. ! queue ! ' % self.pnode.name if self.pnode else ''

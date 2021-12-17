@@ -68,7 +68,7 @@ class TRTPostrepProcess(ServiceBase):
                     writer.release()
                 writer = cv2.VideoWriter(gst_str, 0, rate, (width, height))
 
-            within_scores, period_scores = bucket.within_scores, bucket.period_scores
+            final_embs, within_scores, period_scores = bucket.final_embs, bucket.within_scores, bucket.period_scores
 
             per_frame_periods = np.argmax(period_scores, axis=-1) + 1
             conf_pred_periods = np.max(softmax(period_scores, axis=-1), axis=-1)

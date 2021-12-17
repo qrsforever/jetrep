@@ -4,7 +4,7 @@
         "log_datefmt": "%Y-%m-%d %H:%M:%S",
         "log_format": "%(asctime)s %(funcName)s:%(lineno)d %(name)s %(levelname)s %(message)s",
         "camera": "USB",
-	    "rtmpsink": false,
+        "rtmpsink": false,
         "filesink": false
     },
     "USBCamera": {
@@ -35,7 +35,6 @@
     "SRSRtmpSink": {
         "server": "0.0.0.0",
         "port": 1935,
-        "stream": "1",
-        "duration": 600
+        "duration": 300
     }
 }
