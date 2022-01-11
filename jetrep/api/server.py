@@ -116,5 +116,5 @@ if __name__ == "__main__":
     except Exception as err:
         sys.stderr.write(f'{err}!\n')
     finally:
-        if app.remote and server.started:
+        if remote and server.started:
             shutdown()

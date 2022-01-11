@@ -3,7 +3,7 @@
         "log_level": 10,
         "log_datefmt": "%Y-%m-%d %H:%M:%S",
         "log_format": "%(asctime)s %(funcName)s:%(lineno)d %(name)s %(levelname)s %(message)s",
-        "camera": "USB",
+        "camera": "CSI",
         "rtmpsink": true,
         "filesink": true
     },
