@@ -39,7 +39,7 @@
         },
         "max_duration": 10,
         "embedding_filter": {
-            "enable": true,
+            "enable": false,
             "url": "https://frepai.s3.didiyunapi.com/datasets/weights/d0854f5eb6ea.pkl",
             "alpha":  0.01,
             "beta": 0.85
