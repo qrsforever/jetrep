@@ -3,35 +3,41 @@
 CUR_DIR=$(cd $(dirname ${BASH_SOURCE[0]}); pwd)
 TOP_DIR=$(dirname $CUR_DIR)
 
-XRUN=
 if [[ 0 != $(id -u) ]]
 then
-    XRUN=sudo
+    echo "Not root perm"
+    exit -1
 fi
 
 _apt_install() {
-    $XRUN apt install -y $*    
+    apt install -y $*    
 }
 
 _pip_install() {
-    $XRUN pip3 install $*    
+    pip3 install $*    
 }
 
 ## Environment Prepare
 
-_pip_install pyudev flask flask_cors zerorpc
+# _pip_install flask flask_cors zerorpc
+
+if [[ ! -L /usr/local/cuda ]]
+then
+    ln -s /usr/local/cuda-10.2 /usr/local/cuda
+fi
 
 
 ## Scripts
-$XRUN chmod +x -R $CUR_DIR/*.sh
-$XRUN chmod +x -R $TOP_DIR/etc/crontab/*
-$XRUN chmod +x -R $TOP_DIR/etc/shell/*
+chmod +x -R $CUR_DIR/*.sh
+chmod +x -R $TOP_DIR/etc/crontab/*
+chmod +x -R $TOP_DIR/etc/shell/*
 
 
 ## Install Systemd and Services
 
 . $CUR_DIR/stop_services.sh
 . $CUR_DIR/install_crontab.sh
+. $CUR_DIR/install_jetsos_service.sh
 . $CUR_DIR/install_jetapi_service.sh
 . $CUR_DIR/install_jetgst_service.sh
 . $CUR_DIR/install_jetsrs_service.sh

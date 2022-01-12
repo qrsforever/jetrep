@@ -91,7 +91,7 @@ then
         then
             mount
             sudo parted --script $DEV mkpart APP ext4 ${s1}s 100%
-            sudo mkfs.ext4 ${DEV}${ss}
+            sudo mkfs.ext4 -F ${DEV}${ss}
             /bin/rm -rf ./images/sysroot
             mkdir -p ./images/sysroot
             sudo mount -t ext4 ${DEV}${ss} ./images/sysroot

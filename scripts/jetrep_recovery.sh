@@ -4,7 +4,7 @@ CUR_DIR=$(cd $(dirname ${BASH_SOURCE[0]}); pwd)
 
 VALID_VERSION="default"
 
-for dir in `ls -r $ARCHIVES_PATH`
+for dir in `ls -r ${ARCHIVES_PATH:-/var/jetrep/archives}`
 do
     if [[ "$dir" != "$VALID_VERSION" ]]
     then

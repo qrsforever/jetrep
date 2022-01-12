@@ -7,12 +7,6 @@ DST_DIR=/etc/systemd/system/
 
 SERVICE=jetrep.service
 
-XRUN=
-if [[ 0 != $(id -u) ]]
-then
-    XRUN=sudo
-fi
-
 USER=root
 ROOT_DIR=/jetrep
 
@@ -48,15 +42,12 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     WantedBy=multi-user.target
 EOF
 
-$XRUN systemctl stop $SERVICE
-$XRUN cp $TOP_DIR/etc/systemd/$SERVICE $DST_DIR
-$XRUN systemctl daemon-reload
-# if [[ x$1 == x1 ]]
-# then
-$XRUN systemctl enable $SERVICE
-$XRUN systemctl restart $SERVICE
-$XRUN systemctl status $SERVICE
-# fi
+systemctl stop $SERVICE
+cp $TOP_DIR/etc/systemd/$SERVICE $DST_DIR
+systemctl daemon-reload
+systemctl enable $SERVICE
+systemctl restart $SERVICE
+systemctl status $SERVICE
 journalctl -u $SERVICE --no-pager -n 10
 echo "-------------------------------"
 echo ""

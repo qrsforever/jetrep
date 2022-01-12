@@ -9,12 +9,6 @@ SERVICE=jetsrs.service
 SRS_DIR=/usr/local/srs
 RESTAPI=http://127.0.0.1:80/apis/svc/status
 
-XRUN=
-if [[ 0 != $(id -u) ]]
-then
-    XRUN=sudo
-fi
-
 USER=root
 ROOT_DIR=/jetrep
 
@@ -46,14 +40,14 @@ cat > $TOP_DIR/etc/systemd/$SERVICE <<EOF
     WantedBy=multi-user.target
 EOF
 
-$XRUN systemctl stop $SERVICE
-$XRUN cp $TOP_DIR/etc/systemd/$SERVICE $DST_DIR
-$XRUN systemctl daemon-reload
+systemctl stop $SERVICE
+cp $TOP_DIR/etc/systemd/$SERVICE $DST_DIR
+systemctl daemon-reload
 if [[ x$1 == x1 ]]
 then
-    # $XRUN systemctl enable $SERVICE
-    $XRUN systemctl restart $SERVICE
-    $XRUN systemctl status $SERVICE
+    # systemctl enable $SERVICE
+    systemctl restart $SERVICE
+    systemctl status $SERVICE
 fi
 journalctl -u $SERVICE --no-pager -n 10
 echo "-------------------------------"

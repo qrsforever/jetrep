@@ -10,6 +10,12 @@ then
     XRUN=sudo
 fi
 
+if [[ ! -d $TOP_DIR/runtime ]]
+then
+    $XRUN mkdir -p $TOP_DIR/runtime
+    $XRUN chmod 777 $TOP_DIR/runtime
+fi
+
 cat > $TOP_DIR/runtime/crontab <<EOF
 SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
