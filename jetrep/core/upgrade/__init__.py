@@ -15,7 +15,7 @@ from .udisk import UDiskUpgrade
 
 
 class SoftwareUpgrade(Configurable):
-    server_url = Unicode('http://172.16.0.35/jetson/ota/', help='Set upgrade server url').tag(config=True)
+    server_url = Unicode('http://172.16.0.21/jetson/ota/', help='Set upgrade server url').tag(config=True)
     conn_timeout = Float(3, help='Set timeout(s) for request connect').tag(config=True)
     read_timeout = Float(3, help='Set timeout(s) for request read payload').tag(config=True)
     app_version = Unicode('')
@@ -32,8 +32,9 @@ class SoftwareUpgrade(Configurable):
     def setup(self):
         self.native.logd(f'server_url: {self.server_url}, timeout:({self.conn_timeout}, {self.read_timeout})')
 
-    def start_ota(self):
+    def start_ota(self, flag=0):
         ota = OtaUpgrade(self.native, self.app_version, self.server_url, self.conn_timeout, self.read_timeout)
+        ota.flag = flag
         ota.start()
         return True
 

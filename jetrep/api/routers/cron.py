@@ -29,5 +29,5 @@ def _check_disk():
 
 @api_cron.route('/check_update', methods=['GET'])
 def _check_update():
-    app.remote.send_message(MessageType.TIMER, TimerType.CHECK_UPDATE)
+    app.remote.send_message(MessageType.TIMER, TimerType.CHECK_UPDATE, 0)
     return OK

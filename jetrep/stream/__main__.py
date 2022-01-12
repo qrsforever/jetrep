@@ -34,7 +34,7 @@ class GstPipelineApp(Application):
     name = Unicode('GstPipeline')
     description = Unicode(__doc__)
     config_file = Unicode('', help='Load this config file').tag(config=True)
-    log_file = Unicode('/tmp/gstpipe.log', help='Write log to file ').tag(config=True)
+    log_file = Unicode('/tmp/jetgst.log', help='Write log to file ').tag(config=True)
 
     camera = Enum((0, 1,'CSI', 'USB'), default_value=1, help='Set the video camera device').tag(config=True)
     shmsink = Bool(default_value=True, help='Use shared memory sink source').tag(config=True)

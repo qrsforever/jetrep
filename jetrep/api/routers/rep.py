@@ -9,7 +9,8 @@
 
 
 import json # noqa
-from flask import Blueprint, request, Response
+import traceback
+from flask import Blueprint, request, Response, redirect, url_for, render_template
 from flask import current_app as app
 from jetrep.core.message import (
     MessageType,
@@ -21,6 +22,11 @@ api_rep = Blueprint("rep", __name__)
 
 OK = Response(status=200, headers={})
 ERR = Response(status=500, headers={})
+
+
+@api_rep.route('/easyset', methods=['GET'])
+def _rep_easyset():
+    return render_template('rep_easyset.html')
 
 
 @api_rep.route('/set_param', methods=['POST'])
@@ -55,9 +61,26 @@ def _rep_status():
     return "0"
 
 
-@api_rep.route('/wifi_connect', methods=['POST'])
+@api_rep.route('/wifi_connect', methods=['POST', 'GET'])
 def _rep_wifi_connect():
-    reqjson = request.get_json()
-    app.logger.info(reqjson)
-    app.remote.send_message(MessageType.NETWORK, NetworkType.WIFI_CONNECT, -1, reqjson)
-    return OK
+    status, message = 0, 'SUCCESS'
+    try:
+        if request.method == 'POST':
+            if request.form:
+                reqjson = {
+                    'ssid': request.form['ssid'],
+                    'password': request.form['password']
+                }
+            else:
+                reqjson = request.get_json()
+        else:
+            reqjson = {
+                'ssid': request.args.get('ssid'),
+                'password': request.args.get('password')
+            }
+        app.logger.info(reqjson)
+        app.remote.send_message(MessageType.NETWORK, NetworkType.WIFI_CONNECT, -1, reqjson)
+    except Exception:
+        status = -99
+        message = traceback.format_exc(limit=4)
+    return redirect(url_for('response', status=status, message=message))

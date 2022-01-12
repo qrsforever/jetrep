@@ -10,7 +10,7 @@ then
 fi
 
 ##### Debug ######
-BASH_DEBUG_LOGFILE=/tmp/jetrep_cron.log
+BASH_DEBUG_LOGFILE=/tmp/jetcron.log
 ENABLE_DEBUG=1
 
 debug_check_logfile() {

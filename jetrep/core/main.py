@@ -51,6 +51,12 @@ from jetrep.constants import DefaultPath as DP
 from jetrep.utils.misc import MeldDict
 from jetrep.core.upgrade import SoftwareUpgrade
 
+from jetrep.utils.net import (
+    util_get_lanip,
+    util_get_netip,
+    util_get_mac
+)
+
 multiprocessing.set_start_method('forkserver', force=True)
 # multiprocessing.set_start_method('spawn', force=True)
 
@@ -188,6 +194,8 @@ class JetRepApp(Application):
             os.makedirs(DP.RUNTIME_DIRECTORY)
         if not os.path.exists(self.config_file):
             shutil.copyfile(DP.JETREP_DEF_CONF_PATH, self.config_file)
+        if not os.path.exists(DP.JETGST_CONF_PATH):
+            shutil.copyfile(DP.JETGST_DEF_CONF_PATH, DP.JETGST_CONF_PATH)
         if self.config_file:
             self.load_config_file(self.config_file)
         print(self.config)
@@ -242,6 +250,19 @@ class JetRepApp(Application):
             fw.write(json.dumps(meld_dict, indent=4))
         self.app_update_config(self.config_file)
         return True
+
+    def collect_info(self):
+        info = {}
+        with open(self.config_file, 'r') as fr:
+            info['jetrep'] = json.load(fr)
+        with open(DP.JETGST_CONF_PATH, 'r') as fr:
+            info['jetgst'] = json.load(fr)
+        info['network'] = {
+            'mac': util_get_mac(),
+            'lanip': util_get_lanip(),
+            'netip': util_get_netip(),
+        }
+        return info
 
     def set_state(self, state):
         self.state = state

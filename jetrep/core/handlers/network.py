@@ -13,6 +13,7 @@ from jetrep.core.message import (
      MessageType,
      CommandType,
      NetworkType,
+     TimerType,
      ServiceType,
 )
 from jetrep.utils.net import (
@@ -46,6 +47,7 @@ class NetworkHandler(MessageHandler):
         old_state = self.net_active
         self.net_active = SUCCESS
         if old_state == UNINIT:
+            self.send_message(MessageType.TIMER, TimerType.CHECK_UPDATE, 1)
             return self.send_message(MessageType.CTRL, CommandType.APP_START, ServiceType.API)
         if old_state == FAILURE:
             return self.send_message(MessageType.CTRL, CommandType.APP_RESTART)

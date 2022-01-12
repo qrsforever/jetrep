@@ -153,8 +153,6 @@ def pretty_format(what, arg1, arg2):
             arg1 = NetworkType(arg1)
         else:
             return '%d, %d, %d' % (what, arg1, arg2)
-        if not isinstance(arg2, IntEnum):
-            arg2 = PayloadType(arg2)
         what = MessageType(what)
     return '%s, %s, %s' % (what, arg1, arg2)
 

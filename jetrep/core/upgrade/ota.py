@@ -56,20 +56,24 @@ class OtaUpgrade(threading.Thread):
         }
         '''
         if self.server_url:
-            response = requests.get(self.server_url + '/version_info.json',
-                    headers={'Content-Type': 'application/json'},
-                    timeout=(self.conn_timeout, self.read_timeout))
-            if response.status_code == 200:
-                config = response.json()
-                self.native.logi(config)
-                if config.get('force', False) or compare_version(config['version'], self.app_version):
-                    with open(DP.UPDATE_CONFIG_PATH, 'w') as fw:
-                        fw.write(json.dumps(config, indent=4))
-                    return config
+            try:
+                response = requests.get(os.path.join(self.server_url, 'version_info.json'),
+                        headers={'Content-Type': 'application/json'},
+                        timeout=(self.conn_timeout, self.read_timeout))
+                if response.status_code == 200:
+                    config = response.json()
+                    self.native.logi(config)
+                    flag = not self.flag if self.flag else config.get('force', False)
+                    if flag or compare_version(config['version'], self.app_version):
+                        with open(DP.UPDATE_CONFIG_PATH, 'w') as fw:
+                            fw.write(json.dumps(config, indent=4))
+                        return config
+                    else:
+                        self.native.logw(f'version: {self.app_version} vs {config["version"]}')
                 else:
-                    self.native.logw(f'version: {self.app_version} vs {config["version"]}')
-            else:
-                self.native.loge('Request update config [%s] error!' % self.server_url)
+                    self.native.loge('Request [%d] update config [%s] error!' % (response.status_code, self.server_url))
+            except Exception:
+                self.native.loge('Request update config [%s] except : [%s]!' % (self.server_url, traceback.format_exc(limit=4)))
         return None
 
     def run(self):

@@ -8,7 +8,7 @@
 # @date 2021-11-19 21:38
 
 
-import os
+import os, json
 import shutil
 from jetrep.core.message import MessageHandler
 from jetrep.constants import DefaultPath as DP
@@ -59,6 +59,16 @@ class NotifyHandler(MessageHandler):
 
     def on_usb_event(self, arg2, obj):
         if arg2 == PayloadType.MOUNTED: # Mount
+            # collect jetrep info
+            with open(f'{obj}/jetrep.json', 'w') as fw:
+                fw.write(json.dumps(self.app.collect_info(), indent=4))
+            try:
+                for log in ['jetgst', 'jetrep', 'jetcron']:
+                    log_file = f'/tmp/{log}.log'
+                    if os.path.isfile(log_file):
+                        shutil.copyfile(log_file, f'{obj}/{log}.log')
+            except Exception:
+                pass
             return self.app.softu.start_udisk(obj)
         return False
 
@@ -87,7 +97,7 @@ class NotifyHandler(MessageHandler):
 
         if what == MessageType.TIMER:
             if arg1 == TimerType.CHECK_UPDATE:
-                return self.app.softu.start_ota()
+                return self.app.softu.start_ota(arg2)
             return False
 
         if what == MessageType.UPGRADE:

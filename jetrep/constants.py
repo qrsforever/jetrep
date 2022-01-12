@@ -22,6 +22,8 @@ class DefaultPath(object):
     CRONTAB_DIRECTORY = osp.join(WORKING_DIRECTORY, 'etc', 'crontab')
     JETREP_DEF_CONF_PATH = osp.join(WORKING_DIRECTORY, 'etc', 'jetrep.json')
     JETREP_CONF_PATH = osp.join(RUNTIME_DIRECTORY, 'jetrep.json')
+    JETGST_DEF_CONF_PATH = osp.join(WORKING_DIRECTORY, 'etc', 'jetgst.json')
+    JETGST_CONF_PATH = osp.join(RUNTIME_DIRECTORY, 'jetgst.json')
     LOG_DIRECTORY = osp.join(RUNTIME_DIRECTORY, 'log')
     NETWORK_MODULE_LOGFILE = osp.join(LOG_DIRECTORY, 'network.log')
 

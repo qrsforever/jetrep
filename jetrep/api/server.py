@@ -7,12 +7,12 @@
 # @version 1.0
 # @date 2021-11-11 16:15
 
-import sys
+import sys, os
 import argparse
 import zerorpc
 
 from jetrep.utils.net import util_check_port
-from flask import Flask, Response, redirect, request # noqa
+from flask import Flask, Response, redirect, request, render_template # noqa
 from flask_cors import CORS
 from gevent import pywsgi
 from gevent import signal
@@ -29,7 +29,7 @@ from jetrep.core.message import (
     StateType,
 )
 
-app = Flask('JetRep::Apiserver')
+app = Flask('JetRep::Apiserver', template_folder=f'{os.path.dirname(__file__)}/templates')
 app.debug = True
 CORS(app, supports_credentials=True)
 
@@ -40,10 +40,17 @@ app.register_blueprint(api_rep, url_prefix='/apis/rep')
 
 app.register_blueprint(api_cron, url_prefix='/apis/cron')
 
+DEBUG = False
+
 
 @app.route('/')
 def homepage():
-    return 'Hello, Jetson Repnet!'
+    return render_template('homepage.html')
+
+
+@app.route('/response/<status>/<message>', endpoint='response')
+def _response_info(status, message):
+    return '{}: {}'.format(status, message)
 
 
 if __name__ == "__main__":
@@ -81,6 +88,11 @@ if __name__ == "__main__":
             return jet.send_message(what, arg1, arg2, obj)
         except zerorpc.exceptions.TimeoutExpired:
             app.logger.warning(f'Call send_message timeout!\n')
+
+    if DEBUG:
+        server = pywsgi.WSGIServer((args.host, args.port), app)
+        server.serve_forever()
+        exit(0)
 
     try:
         remote = None

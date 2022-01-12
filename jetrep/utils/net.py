@@ -44,6 +44,17 @@ def util_get_lanip():
     return val
 
 
+def util_get_netip():
+    val = '0.0.0.0'
+    try:
+        result = os.popen('curl -s http://txt.go.sohu.com/ip/soip| grep -P -o -i "(\d+\.\d+.\d+.\d+)"', 'r') # noqa
+        if result:
+            val = result.read().strip('\n')
+    except Exception:
+        pass
+    return val
+
+
 def util_ping_request(hosts=('8.8.8.8', '1.1.1.1'), port=53, timeout=2):
     def_timeout = socket.getdefaulttimeout()
     val = False
