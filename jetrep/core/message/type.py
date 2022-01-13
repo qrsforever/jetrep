@@ -105,6 +105,7 @@ class NetworkType(IntEnum):
     DOWN = 6
 
     WIFI_CONNECT = 11
+    WIFI_PINGREQ = 12
 
 
 @unique
@@ -116,7 +117,7 @@ class PayloadType(IntEnum):
     CONFIG_UPDATE = 4
     CONFIG_VALID = 5
     CONFIG_LOADED = 6
-    UNKOWN7 = 7
+    TRY_COUNT = 7
     UNKOWN8 = 8
     UNKOWN9 = 9
     REP_INFER_RESULT = 10

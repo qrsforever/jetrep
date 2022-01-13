@@ -47,16 +47,17 @@ class NetworkHandler(MessageHandler):
         old_state = self.net_active
         self.net_active = SUCCESS
         if old_state == UNINIT:
+            self.send_message(MessageType.CTRL, CommandType.APP_START, ServiceType.API)
             self.send_message(MessageType.TIMER, TimerType.CHECK_UPDATE, 1)
-            return self.send_message(MessageType.CTRL, CommandType.APP_START, ServiceType.API)
         if old_state == FAILURE:
-            return self.send_message(MessageType.CTRL, CommandType.APP_RESTART)
+            self.send_message(MessageType.CTRL, CommandType.APP_RESTART)
         return True
 
     def on_disconnect(self, arg2, obj):
         # Wifi AP
         self.net_active = FAILURE
         util_create_hotspot(ssid=self.jet_apname)
+        self.send_message(MessageType.CTRL, CommandType.APP_START, ServiceType.API)
         return True
 
     def handle_message(self, what, arg1, arg2, obj):
@@ -70,7 +71,6 @@ class NetworkHandler(MessageHandler):
                 return self.on_connect(arg2, obj)
             if arg1 == NetworkType.WIFI_CONNECT:
                 return self.on_wifi_connect(arg2, obj)
-
         return False
 
     @staticmethod

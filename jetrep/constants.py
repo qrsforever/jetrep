@@ -43,6 +43,8 @@ class DefaultServer(object):
     RTMP_STREAM_POST = 2
     RTMP_DVR_DURATION = 900
 
+    NET_IFNAME_LIST = ['wlan0', 'eth0']
+
 
 class DefaultPSContext(object):
     EF_PKL_PATH = '/tmp'

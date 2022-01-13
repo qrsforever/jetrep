@@ -79,7 +79,7 @@ class SystemEventMonitor(threading.Thread):
             return
         self.native.logd(f'{device.device_type}, {device.driver}')
 
-        if not device.device_node.startswith('/dev/sd'):
+        if not device.device_node.startswith('/dev/sd') and int(device.device_node[8:]) != 1:
             # TODO if 'ID_BUS' in x and x['ID_BUS'] == 'usb'
             return
 
@@ -113,7 +113,7 @@ class SystemEventMonitor(threading.Thread):
                     if i % 101 == 0:
                         now = datetime.datetime.now()
                         self.native.logw(f'Unavailabilty Persistent at: {str(now).split(".")[0]}')
-                    if i == 2:
+                    if i == 3:
                         self.native.send_message(MessageType.NETWORK, NetworkType.DISCONNECTED)
 
                 up_time = datetime.datetime.now()

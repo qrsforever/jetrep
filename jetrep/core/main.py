@@ -48,13 +48,13 @@ from jetrep.utils.shell import (
 from jetrep.core.context import PSContext
 from jetrep.core.event import SystemEventMonitor
 from jetrep.constants import DefaultPath as DP
+from jetrep.constants import DefaultServer as DS
 from jetrep.utils.misc import MeldDict
 from jetrep.core.upgrade import SoftwareUpgrade
 
 from jetrep.utils.net import (
-    util_get_lanip,
-    util_get_netip,
-    util_get_mac
+    util_get_mac,
+    util_get_ip,
 )
 
 multiprocessing.set_start_method('forkserver', force=True)
@@ -257,11 +257,12 @@ class JetRepApp(Application):
             info['jetrep'] = json.load(fr)
         with open(DP.JETGST_CONF_PATH, 'r') as fr:
             info['jetgst'] = json.load(fr)
-        info['network'] = {
-            'mac': util_get_mac(),
-            'lanip': util_get_lanip(),
-            'netip': util_get_netip(),
-        }
+        info['network'] = {}
+        for ifname in DS.NET_IFNAME_LIST:
+            info['network'][ifname] = {
+                'mac': util_get_mac(ifname),
+                'ip': util_get_ip(ifname)
+            }
         return info
 
     def set_state(self, state):

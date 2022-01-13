@@ -38,6 +38,7 @@ class UDiskUpgrade(threading.Thread):
             if len(version.split('.')) > 2:
                 break
         if not version:
+            self.native.send_message(MessageType.UPGRADE, UpgradeType.UDISK, PayloadType.UPGRADE_ERROR)
             return
 
         dst_dir = f'{DP.UPDATE_INSTALL_PATH}/{version}'

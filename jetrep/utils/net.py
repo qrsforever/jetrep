@@ -9,6 +9,8 @@
 
 import os
 import socket
+import struct
+import fcntl
 import time
 import uuid
 import random
@@ -33,8 +35,51 @@ def util_check_port(port, ip='127.0.0.1', trycnt=1):
     return used
 
 
+def util_get_ip(ifname='eth0'):
+    val = '0.0.0.0'
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        val = socket.inet_ntoa(
+                fcntl.ioctl(
+                    s.fileno(),
+                    0x8915,
+                    struct.pack('256s', bytes(ifname[:15], 'utf-8')))[20:24])
+    except Exception:
+        pass
+    finally:
+        s.close()
+    return val
+
+
+def util_get_mac(ifname='eth0'):
+    # try:
+    #     with open(f'/sys/class/net/{device}/address', 'r') as fr:
+    #         mac = fr.readline().strip().replace(':', '')
+    # except Exception:
+    #     mac = "000000000000"
+    # return mac
+    val = '000000000000'
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        val = fcntl.ioctl(
+                s.fileno(),
+                0x8927,
+                struct.pack('256s', bytes(ifname[:15], 'utf-8')))[18:24]
+        val = ''.join(['%02x' % b for b in val])
+    except Exception:
+        pass
+    finally:
+        s.close()
+    return val
+
+
 def util_get_lanip():
     val = '0.0.0.0'
+    # try:
+    #     # ret = socket.gethostbyname(socket.getfqdn(socket.gethostname())) # slow
+    #     ret = socket.gethostbyname(socket.gethostname())
+    # except Exception:
+    #     pass
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(('8.8.8.8', 80))
@@ -55,7 +100,7 @@ def util_get_netip():
     return val
 
 
-def util_ping_request(hosts=('8.8.8.8', '1.1.1.1'), port=53, timeout=2):
+def util_ping_request(hosts=('8.8.8.8', '1.1.1.1'), port=53, timeout=3):
     def_timeout = socket.getdefaulttimeout()
     val = False
     socket.setdefaulttimeout(timeout)
@@ -209,15 +254,6 @@ def util_get_uuid():
     return uuid.uuid1().hex[-12:]
 
 
-def util_get_mac(device='eth0'):
-    try:
-        with open(f'/sys/class/net/{device}/address', 'r') as fr:
-            mac = fr.readline().strip().replace(':', '')
-    except Exception:
-        mac = "000000000000"
-    return mac
-
-
 def util_request_data(x, path='/tmp'):
     if x.startswith('http') or x.startswith('ftp'):
         x = parse.quote(x, safe=':/?-=')
@@ -236,4 +272,6 @@ if __name__ == "__main__":
     # print(_wifi_disconnect())
     # print(_wifi_delete_connection())
     # print(util_create_hotspot())
-    print(util_wifi_connect(ssid='国电社区', passwd='88888888', apname='JET-5bcfa5'))
+    # print(util_wifi_connect(ssid='国电社区', passwd='88888888', apname='JET-5bcfa5'))
+    print(util_get_ip('xwlp4s0'))
+    print(util_get_mac('xenp2s0'))

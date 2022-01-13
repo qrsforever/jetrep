@@ -60,25 +60,36 @@ class NotifyHandler(MessageHandler):
     def on_usb_event(self, arg2, obj):
         if arg2 == PayloadType.MOUNTED: # Mount
             # collect jetrep info
-            with open(f'{obj}/jetrep.json', 'w') as fw:
-                fw.write(json.dumps(self.app.collect_info(), indent=4))
+            logcat_path = f'{obj}/jetrep_logcat'
+            if os.path.exists(logcat_path):
+                shutil.rmtree(logcat_path)
+            os.makedirs(logcat_path)
             try:
+                with open(f'{logcat_path}/jetrep.json', 'w') as fw:
+                    fw.write(json.dumps(self.app.collect_info(), indent=4))
                 for log in ['jetgst', 'jetrep', 'jetcron']:
                     log_file = f'/tmp/{log}.log'
                     if os.path.isfile(log_file):
-                        shutil.copyfile(log_file, f'{obj}/{log}.log')
+                        shutil.copyfile(log_file, f'{logcat_path}/{log}.log')
+                        self.app.native.logi(f'copy {log_file} to {logcat_path}/{log}.log')
+                    for i in range(1, 8):
+                        log_file_i = f'{log_file}.{i}'
+                        if os.path.isfile(log_file_i):
+                            shutil.copyfile(log_file_i, f'{logcat_path}/{log}.log.{i}')
+                            self.app.native.logi(f'copy {log_file_i} to {logcat_path}/{log}.log.{i}')
+                os.sync()
             except Exception:
-                pass
-            return self.app.softu.start_udisk(obj)
-        return False
+                self.app.native.loge('collect error!')
+            self.app.softu.start_udisk(obj)
+        return True
 
     def on_upgrade_event(self, arg2, obj):
         if arg2 == PayloadType.UPGRADE_ERROR:
             pass
         elif arg2 == PayloadType.UPGRADE_SUCCESS:
             self.do_version_archives()
-            return self.send_message(MessageType.CTRL, CommandType.APP_RESTART)
-        return False
+            self.send_message(MessageType.CTRL, CommandType.APP_RESTART)
+        return True
 
     def do_version_archives(self):
         archives = sorted(os.listdir(DP.UPDATE_INSTALL_PATH), reverse=True)
