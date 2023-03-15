@@ -26,7 +26,7 @@ class SRSRtmpSink(GDataSink):
 
     def gst_pipe(self):
         max_lateness = self.max_lateness * 1000000000
-        location = f'rtmp://{self.server}:{self.port}/pre/{self.stream}?vhost=jet{self.duration}'
+        location = f'rtmp://{self.server}:{self.port}/pre/{self.stream}?vhost=seg.{self.duration}'
         return [
             'flvmux',
             f'rtmpsink max-lateness={max_lateness} location={location}',

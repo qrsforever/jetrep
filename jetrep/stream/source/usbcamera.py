@@ -15,7 +15,7 @@ from .gsource import GDataSource
 class USBCamera(GDataSource):
     name = Unicode(default_value='usbcam')
     device = Int(default_value=1)
-    
+
     def gst_pipe(self):
         # io-mode = 2 (mmap)
         return [

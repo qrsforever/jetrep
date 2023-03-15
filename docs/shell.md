@@ -24,4 +24,4 @@ curl --header  "Content-Type: application/json" --request POST --data  '{"ssid":
 
 ### update check
 
-curl --request GET http://$IP1/apis/cron/check_update 
+curl --request GET http://$IP1/apis/cron/check_update
